@@ -1,0 +1,2582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0f17">
+<script src="assets/ai-settings.js"></script>
+<title>Code Tutor</title>
+<meta name="description" content="Learn programming with Code Tutor: interactive lessons, a code editor, practical snippets, and language quizzes.">
+<meta property="og:site_name" content="Red Team Tutor">
+<meta property="og:title" content="Code Tutor">
+<meta property="og:description" content="Learn programming with interactive lessons, practical examples, and language quizzes.">
+<script src="assets/code-quizzes.js"></script>
+<style>
+  :root {
+    --bg:#0b0f17; --bg2:#0f1520; --card:#131a26; --card2:#1a2233;
+    --border:#1f2a3d; --fg:#e7eefc; --dim:#7d8ba8;
+    --accent:#3fb950; --accent2:#2ea043;
+    --user:#2563eb; --user2:#1d4ed8; --danger:#f85149;
+    --warn:#d29922; --gold:#e3b341; --info:#79c0ff;
+    --fire:#ff7b4a; --purple:#a371f7;
+    --glow:0 0 0 1px rgba(63,185,80,.25), 0 8px 24px -8px rgba(63,185,80,.35);
+  }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body {
+    margin:0; padding:0; height:100%;
+    background:
+      radial-gradient(1200px 600px at 20% -10%, #142033 0%, transparent 60%),
+      radial-gradient(900px 500px at 100% 10%, #16233a 0%, transparent 55%),
+      var(--bg);
+    color:var(--fg);
+    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+    overscroll-behavior:none;
+  }
+  body { display:flex; flex-direction:column; height:100dvh; padding-top:env(safe-area-inset-top); padding-bottom:env(safe-area-inset-bottom); }
+
+  header {
+    display:flex; align-items:center; gap:6px;
+    padding:10px;
+    background:rgba(11,15,23,.7); backdrop-filter:blur(14px);
+    border-bottom:1px solid var(--border);
+    position:sticky; top:0; z-index:10;
+  }
+  .logo {
+    width:32px; height:32px; border-radius:10px;
+    background:linear-gradient(135deg, var(--accent), #1f6feb);
+    display:grid; place-items:center;
+    font-size:11px; font-weight:800; color:#04170a;
+    flex:0 0 32px; position:relative;
+    letter-spacing:.3px;
+  }
+  header h1 { font-size:13px; margin:0; font-weight:600; letter-spacing:.2px; flex:1; min-width:0; }
+  header h1 small { display:block; font-size:9.5px; color:var(--dim); font-weight:500; letter-spacing:.4px; text-transform:uppercase; margin-top:1px; }
+  .streak-pill {
+    display:flex; align-items:center; gap:3px;
+    background:linear-gradient(135deg, rgba(255,123,74,.15), rgba(227,179,65,.15));
+    border:1px solid rgba(255,123,74,.4);
+    color:var(--fire); padding:4px 9px; border-radius:20px;
+    font-size:11px; font-weight:700; flex:0 0 auto;
+    white-space:nowrap;
+  }
+  .streak-pill span { color:#fff; }
+  .nav-btn {
+    min-width:auto; height:32px; border-radius:9px;
+    background:var(--card); border:1px solid var(--border);
+    color:var(--fg); font-size:11px; font-weight:600;
+    padding:0 10px; display:flex; align-items:center; justify-content:center;
+    transition:.15s; position:relative;
+    text-decoration:none; font-family:inherit; cursor:pointer;
+    letter-spacing:.3px;
+  }
+  .nav-btn:active { transform:scale(.94); background:var(--card2); }
+  .nav-btn.on { background:var(--accent); border-color:var(--accent2); color:#04170a; }
+
+  #timerBar {
+    display:flex; align-items:center; gap:8px;
+    padding:7px 12px;
+    background:rgba(19,26,38,.6);
+    border-bottom:1px solid var(--border);
+    font-size:11px; color:var(--dim);
+  }
+  #timerBar .t-val { color:var(--fg); font-weight:600; font-variant-numeric:tabular-nums; }
+  #timerBar .goal-bar { flex:1; height:5px; background:var(--card2); border-radius:3px; overflow:hidden; min-width:40px; }
+  #timerBar .goal-fill { height:100%; border-radius:3px; background:linear-gradient(90deg, var(--accent), #1f6feb); transition:width .6s; width:0%; }
+  #timerBar.done .goal-fill { background:linear-gradient(90deg, var(--gold), var(--fire)); }
+  .xp-pill {
+    display:inline-flex; align-items:center; gap:3px;
+    background:linear-gradient(135deg, rgba(227,179,65,.15), rgba(63,185,80,.15));
+    border:1px solid rgba(227,179,65,.4);
+    color:var(--gold); font-size:10.5px; font-weight:700;
+    padding:2px 8px; border-radius:20px; white-space:nowrap;
+  }
+
+  #lessonBanner {
+    display:none; flex-direction:column;
+    padding:8px 14px;
+    background:linear-gradient(135deg, rgba(63,185,80,.12), rgba(31,111,235,.12));
+    border-bottom:1px solid rgba(63,185,80,.35);
+    font-size:12px; gap:8px;
+  }
+  #lessonBanner.show { display:flex; }
+  #lessonBanner .lb-top { display:flex; align-items:center; gap:10px; }
+  #lessonBanner .lb-text { flex:1; min-width:0; }
+  #lessonBanner .lb-title { font-weight:600; color:var(--fg); font-size:12.5px; }
+  #lessonBanner .lb-sub { font-size:10.5px; color:var(--dim); margin-top:1px; }
+  #lessonBanner .lb-exit {
+    background:transparent; border:1px solid var(--border);
+    color:var(--dim); padding:3px 9px; border-radius:20px; font-size:10.5px;
+    font-family:inherit; cursor:pointer;
+  }
+
+  /* Mode bar - switches between Chat, Editor, Snippets, Quiz */
+  #modeBar {
+    display:flex; gap:0;
+    padding:6px 10px 4px;
+    background:rgba(19,26,38,.4);
+    border-bottom:1px solid var(--border);
+    overflow-x:auto; scrollbar-width:none;
+  }
+  #modeBar::-webkit-scrollbar { display:none; }
+  .mode-btn {
+    flex:0 0 auto; background:transparent;
+    border:1px solid transparent; border-bottom:2px solid transparent;
+    color:var(--dim); padding:8px 14px; font-size:12.5px; font-weight:600;
+    font-family:inherit; cursor:pointer; letter-spacing:.3px;
+    transition:.15s;
+  }
+  .mode-btn:active { color:var(--fg); }
+  .mode-btn.active { color:var(--accent); border-bottom-color:var(--accent); }
+
+  /* Panels */
+  .panel { flex:1; overflow-y:auto; display:none; flex-direction:column; }
+  .panel.active { display:flex; }
+  #panel-chat { padding:16px 14px 24px; gap:14px; }
+  #panel-editor { padding:12px; gap:10px; }
+  #panel-snippets { padding:12px 14px 24px; gap:10px; }
+  #panel-quiz { padding:16px 14px 24px; gap:14px; }
+
+  /* Chat bubbles */
+  .msg { display:flex; gap:10px; align-items:flex-start; max-width:100%; animation:pop .25s ease-out; }
+  @keyframes pop { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+  .msg.user { flex-direction:row-reverse; }
+  .avatar {
+    flex:0 0 30px; width:30px; height:30px; border-radius:9px;
+    display:grid; place-items:center; font-size:10px; font-weight:800;
+    background:var(--card2); border:1px solid var(--border);
+    color:var(--dim); letter-spacing:.3px;
+  }
+  .msg.user .avatar { background:linear-gradient(135deg,var(--user),var(--user2)); border-color:#1e40af; color:#fff; }
+  .msg.bot .avatar  { background:linear-gradient(135deg,var(--accent),#1f6feb); border-color:#1f6feb; color:#04170a; }
+
+  .bubble {
+    max-width:calc(100% - 44px);
+    background:var(--card); border:1px solid var(--border);
+    border-radius:14px; padding:11px 14px;
+    font-size:15px; line-height:1.55;
+    white-space:pre-wrap; word-wrap:break-word; position:relative;
+  }
+  .msg.user .bubble { background:linear-gradient(135deg,var(--user),var(--user2)); border-color:#1e40af; color:#fff; border-bottom-right-radius:4px; }
+  .msg.bot .bubble { border-bottom-left-radius:4px; }
+  .bubble.saved { border-color:var(--gold); box-shadow:0 0 0 1px rgba(227,179,65,.25); }
+  .bubble code { background:#0a0e15; border:1px solid var(--border); padding:1px 5px; border-radius:5px; font-family:ui-monospace, Menlo, Consolas, monospace; font-size:13px; color:#7ee787; }
+  .bubble pre { background:#0a0e15; border:1px solid var(--border); padding:10px 12px; border-radius:9px; overflow-x:auto; margin:8px 0; font-size:13px; line-height:1.5; }
+  .bubble pre code { background:none; border:none; padding:0; }
+
+  .msg-actions { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+  .act-btn {
+    font-size:11px; color:var(--dim);
+    background:transparent; border:1px solid var(--border);
+    border-radius:20px; padding:3px 9px;
+    display:inline-flex; align-items:center; gap:5px;
+    font-family:inherit; cursor:pointer;
+  }
+  .act-btn:active { background:var(--card2); color:var(--fg); }
+  .act-btn.speaking { color:var(--accent); border-color:var(--accent); }
+  .act-btn.save-active { color:var(--gold); border-color:var(--gold); background:rgba(227,179,65,.08); }
+
+  .topic-tag, .source-tag, .lesson-tag {
+    display:inline-block; font-size:10px;
+    padding:2px 8px; border-radius:20px;
+    margin-top:6px; margin-right:6px;
+    font-weight:600; letter-spacing:.3px;
+  }
+  .topic-tag { color:var(--accent); background:rgba(63,185,80,.1); border:1px solid rgba(63,185,80,.3); }
+  .source-tag { color:var(--info); background:rgba(121,192,255,.1); border:1px solid rgba(121,192,255,.3); cursor:pointer; }
+  .lesson-tag { color:var(--gold); background:rgba(227,179,65,.12); border:1px solid rgba(227,179,65,.4); font-weight:700; }
+
+  .typing { display:inline-flex; gap:4px; padding:4px 0; }
+  .typing span { width:6px; height:6px; border-radius:50%; background:var(--dim); animation:bounce 1.2s infinite; }
+  .typing span:nth-child(2){ animation-delay:.15s; }
+  .typing span:nth-child(3){ animation-delay:.3s; }
+  @keyframes bounce { 0%,60%,100%{ transform:translateY(0); opacity:.4; } 30%{ transform:translateY(-5px); opacity:1; } }
+
+  .sys-msg {
+    align-self:center; font-size:11.5px; color:var(--dim);
+    background:rgba(31,42,61,.5); border:1px solid var(--border);
+    padding:5px 12px; border-radius:20px; max-width:90%; text-align:center;
+  }
+  .sys-msg.celebrate {
+    color:var(--gold);
+    background:linear-gradient(135deg, rgba(227,179,65,.15), rgba(255,123,74,.15));
+    border-color:var(--gold); font-weight:600; font-size:12.5px; padding:8px 14px;
+  }
+  .sys-msg.info {
+    color:var(--info);
+    background:linear-gradient(135deg, rgba(121,192,255,.1), rgba(63,185,80,.1));
+    border-color:rgba(121,192,255,.4); font-size:12px;
+  }
+  .sys-msg.error {
+    color:#ff7b72;
+    background:linear-gradient(135deg, rgba(248,81,73,.12), rgba(255,123,74,.12));
+    border-color:rgba(248,81,73,.5); font-size:12px;
+  }
+
+  /* Chips */
+  #chips {
+    display:flex; gap:8px; overflow-x:auto;
+    padding:0 14px 10px; scrollbar-width:none;
+  }
+  #chips::-webkit-scrollbar { display:none; }
+  .chip {
+    flex:0 0 auto; background:var(--card); border:1px solid var(--border);
+    color:var(--fg); padding:7px 13px; border-radius:20px;
+    font-size:12.5px; font-weight:600; white-space:nowrap; transition:.15s;
+    font-family:inherit; cursor:pointer; letter-spacing:.2px;
+  }
+  .chip:active { background:var(--card2); transform:scale(.96); }
+  .chip.accent { background:rgba(63,185,80,.12); border-color:rgba(63,185,80,.4); color:#7ee787; }
+  .chip.review { background:rgba(210,153,34,.15); border-color:rgba(210,153,34,.5); color:#f0c674; }
+  .chip.quiz { background:linear-gradient(135deg, rgba(227,179,65,.18), rgba(255,123,74,.18)); border-color:rgba(227,179,65,.55); color:var(--gold); }
+  .chip.blue { background:rgba(121,192,255,.12); border-color:rgba(121,192,255,.4); color:var(--info); }
+
+  /* Footer / input */
+  footer {
+    padding:8px 12px 12px;
+    background:rgba(11,15,23,.85); backdrop-filter:blur(14px);
+    border-top:1px solid var(--border);
+    display:flex; gap:8px; align-items:flex-end;
+  }
+  #input {
+    flex:1; background:var(--card); color:var(--fg);
+    border:1px solid var(--border); border-radius:14px;
+    padding:11px 14px; font:inherit; font-size:15px;
+    resize:none; height:46px; max-height:140px; outline:none; transition:.15s;
+  }
+  #input:focus { border-color:var(--accent); box-shadow:var(--glow); }
+  #btnMic {
+    flex:0 0 46px; width:46px; height:46px; border-radius:14px;
+    background:var(--card); border:1px solid var(--border);
+    color:var(--fg); font-size:11px; font-weight:700;
+    display:grid; place-items:center; transition:.15s;
+    font-family:inherit; cursor:pointer; letter-spacing:.3px;
+  }
+  #btnMic:active { transform:scale(.93); background:var(--card2); }
+  #btnMic.listening {
+    background:linear-gradient(135deg, var(--danger), var(--fire));
+    border-color:var(--danger); color:#fff;
+    animation:pulse 1.2s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { box-shadow:0 0 0 0 rgba(248,81,73,.6); }
+    50% { box-shadow:0 0 0 10px rgba(248,81,73,0); }
+  }
+  #send {
+    flex:0 0 46px; width:46px; height:46px; border-radius:14px;
+    background:linear-gradient(135deg,var(--accent),#1f6feb);
+    border:none; color:#04170a; font-size:11px; font-weight:800;
+    display:grid; place-items:center;
+    box-shadow:0 6px 18px -6px rgba(63,185,80,.7); transition:.15s;
+    font-family:inherit; cursor:pointer; letter-spacing:.3px;
+  }
+  #send:active { transform:scale(.93); }
+  #send:disabled { opacity:.4; }
+
+  /* Sheets */
+  #settings, #progressPanel, #notesPanel, #statsPanel, #coursesPanel, #backupPanel, #quizSheet, #snippetsPanel {
+    position:fixed; inset:0; z-index:100;
+    background:rgba(0,0,0,.6);
+    display:none; align-items:flex-end;
+    backdrop-filter:blur(4px); animation:fade .2s;
+  }
+  @keyframes fade { from{opacity:0;} to{opacity:1;} }
+  #settings.show, #progressPanel.show, #notesPanel.show, #statsPanel.show, #coursesPanel.show, #backupPanel.show, #quizSheet.show, #snippetsPanel.show { display:flex; }
+  .sheet {
+    width:100%; background:var(--bg2);
+    border-top-left-radius:20px; border-top-right-radius:20px;
+    border-top:1px solid var(--border);
+    padding:20px 18px 26px;
+    max-height:90dvh; overflow-y:auto;
+    animation:slideUp .28s cubic-bezier(.2,.9,.3,1);
+    padding-bottom:calc(26px + env(safe-area-inset-bottom));
+  }
+  @keyframes slideUp { from{transform:translateY(100%);} to{transform:none;} }
+  .sheet h2 { font-size:16px; margin:0 0 4px; font-weight:600; }
+  .sheet p.sub { font-size:12px; color:var(--dim); margin:0 0 18px; }
+  .field { margin-bottom:14px; }
+  .field label { display:block; font-size:12px; color:var(--dim); margin-bottom:6px; font-weight:500; }
+  .field input, .field select, .field textarea {
+    width:100%; background:var(--card); color:var(--fg);
+    border:1px solid var(--border); border-radius:10px;
+    padding:11px 12px; font:inherit; font-size:14px; outline:none;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus { border-color:var(--accent); }
+  .row { display:flex; gap:10px; margin-top:16px; }
+  .btn {
+    flex:1; padding:12px; border-radius:12px;
+    font-size:14px; font-weight:600;
+    border:1px solid var(--border); background:var(--card); color:var(--fg); transition:.15s;
+    font-family:inherit; cursor:pointer;
+  }
+  .btn:active { transform:scale(.97); }
+  .btn.primary { background:linear-gradient(135deg,var(--accent),#1f6feb); border:none; color:#04170a; box-shadow:0 6px 18px -8px rgba(63,185,80,.7); }
+  .btn.danger { color:#ff7b72; border-color:rgba(248,81,73,.4); }
+  .btn.gold { background:linear-gradient(135deg, var(--gold), var(--fire)); border:none; color:#1a1200; font-weight:700; }
+  .hint { font-size:11.5px; color:var(--dim); margin-top:6px; line-height:1.5; }
+
+  .switch { display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid var(--border); }
+  .switch:last-of-type { border-bottom:none; }
+  .switch span { font-size:14px; }
+  .switch small { display:block; color:var(--dim); font-size:11.5px; margin-top:2px; }
+  .tog {
+    position:relative; width:44px; height:26px; flex:0 0 44px;
+    background:var(--card2); border:1px solid var(--border);
+    border-radius:20px; transition:.2s; cursor:pointer;
+  }
+  .tog::after { content:""; position:absolute; top:2px; left:2px; width:20px; height:20px; border-radius:50%; background:var(--dim); transition:.2s; }
+  .tog.on { background:var(--accent); border-color:var(--accent2); }
+  .tog.on::after { left:20px; background:#04170a; }
+
+  .status-pill { display:inline-flex; align-items:center; gap:6px; font-size:11px; color:var(--dim); background:var(--card); border:1px solid var(--border); padding:4px 10px; border-radius:20px; margin-top:8px; }
+  .dot { width:6px; height:6px; border-radius:50%; background:var(--dim); }
+  .dot.ok { background:var(--accent); box-shadow:0 0 8px var(--accent); }
+  .dot.bad { background:var(--danger); }
+
+  .prog-overall { display:flex; align-items:center; gap:14px; background:linear-gradient(135deg, rgba(63,185,80,.12), rgba(31,111,235,.12)); border:1px solid var(--border); border-radius:14px; padding:14px; margin-bottom:16px; }
+  .prog-ring { width:56px; height:56px; border-radius:50%; background:conic-gradient(var(--accent) var(--p,0%), var(--card2) 0); display:grid; place-items:center; flex:0 0 56px; position:relative; }
+  .prog-ring::before { content:""; width:44px; height:44px; border-radius:50%; background:var(--bg2); position:absolute; }
+  .prog-ring span { position:relative; font-size:13px; font-weight:700; color:var(--accent); }
+  .prog-ring-wrap { position:relative; display:grid; place-items:center; }
+  .prog-meta { flex:1; }
+  .prog-meta strong { font-size:15px; display:block; }
+  .prog-meta small { color:var(--dim); font-size:12px; }
+  .topic-row { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:12px 14px; margin-bottom:10px; position:relative; }
+  .topic-head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; }
+  .topic-name { font-size:14px; font-weight:600; }
+  .topic-level { font-size:11px; font-weight:700; padding:2px 8px; border-radius:10px; }
+  .lv0 { background:rgba(125,139,168,.2); color:var(--dim); }
+  .lv1 { background:rgba(248,81,73,.15); color:#ff7b72; }
+  .lv2 { background:rgba(210,153,34,.15); color:#f0c674; }
+  .lv3 { background:rgba(31,111,235,.2); color:#79c0ff; }
+  .lv4 { background:rgba(63,185,80,.18); color:#7ee787; }
+  .lv5 { background:rgba(63,185,80,.3); color:#56d364; }
+  .level-bar { height:6px; border-radius:3px; background:var(--card2); overflow:hidden; margin-bottom:8px; }
+  .level-fill { height:100%; border-radius:3px; background:linear-gradient(90deg, var(--accent), #1f6feb); transition:width .4s; }
+  .topic-meta { font-size:11px; color:var(--dim); display:flex; gap:10px; flex-wrap:wrap; }
+  .due-now { color:var(--warn); font-weight:600; }
+  .empty-state { text-align:center; padding:30px 20px; color:var(--dim); font-size:13px; line-height:1.6; }
+
+  .notes-search { display:flex; gap:8px; margin-bottom:14px; }
+  .notes-search input { flex:1; background:var(--card); color:var(--fg); border:1px solid var(--border); border-radius:10px; padding:10px 12px; font:inherit; font-size:14px; outline:none; }
+  .notes-search input:focus { border-color:var(--accent); }
+  .notes-tag-filter { display:flex; gap:6px; overflow-x:auto; padding-bottom:10px; margin-bottom:12px; scrollbar-width:none; }
+  .notes-tag-filter::-webkit-scrollbar { display:none; }
+  .filter-chip { flex:0 0 auto; background:var(--card); border:1px solid var(--border); color:var(--dim); padding:5px 11px; border-radius:20px; font-size:11.5px; font-weight:500; font-family:inherit; cursor:pointer; }
+  .filter-chip.active { background:rgba(63,185,80,.15); border-color:var(--accent); color:var(--accent); }
+  .note-card { background:var(--card); border:1px solid var(--border); border-left:3px solid var(--gold); border-radius:12px; padding:12px 14px; margin-bottom:10px; }
+  .note-meta { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:8px; }
+  .note-tag { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.4px; color:var(--accent); background:rgba(63,185,80,.1); border:1px solid rgba(63,185,80,.3); padding:2px 8px; border-radius:20px; }
+  .note-date { font-size:10.5px; color:var(--dim); }
+  .note-body { font-size:13.5px; line-height:1.55; color:var(--fg); white-space:pre-wrap; word-wrap:break-word; max-height:220px; overflow:hidden; position:relative; }
+  .note-body.expanded { max-height:none; }
+  .note-body.collapsed::after { content:""; position:absolute; bottom:0; left:0; right:0; height:40px; background:linear-gradient(transparent, var(--card)); }
+  .note-actions { display:flex; gap:6px; margin-top:10px; flex-wrap:wrap; }
+  .notes-count { display:inline-flex; align-items:center; gap:6px; font-size:11px; color:var(--dim); background:var(--card); border:1px solid var(--border); padding:4px 10px; border-radius:20px; margin-bottom:12px; }
+
+  .stat-hero { text-align:center; padding:20px 14px; margin-bottom:16px; background:linear-gradient(135deg, rgba(255,123,74,.12), rgba(227,179,65,.12)); border:1px solid rgba(255,123,74,.3); border-radius:16px; }
+  .stat-hero .num { font-size:44px; font-weight:800; color:var(--fire); line-height:1; margin-bottom:4px; font-variant-numeric:tabular-nums; }
+  .stat-hero .lbl { font-size:12.5px; color:var(--dim); letter-spacing:.4px; text-transform:uppercase; }
+  .stat-hero .best { font-size:11.5px; color:var(--dim); margin-top:8px; }
+  .stat-hero .best b { color:var(--gold); }
+
+  .rank-hero { text-align:center; padding:18px 14px; margin-bottom:16px; background:linear-gradient(135deg, rgba(227,179,65,.14), rgba(63,185,80,.14)); border:1px solid rgba(227,179,65,.4); border-radius:16px; }
+  .rank-hero .rk-title { font-size:20px; font-weight:800; color:var(--gold); letter-spacing:.3px; }
+  .rank-hero .rk-xp { font-size:12.5px; color:var(--dim); margin-top:4px; }
+  .rank-hero .rk-bar { height:8px; background:var(--card2); border-radius:4px; overflow:hidden; margin:12px auto 8px; max-width:220px; }
+  .rank-hero .rk-fill { height:100%; border-radius:4px; background:linear-gradient(90deg, var(--gold), var(--fire)); transition:width .5s; }
+  .rank-hero .rk-next { font-size:11px; color:var(--dim); }
+
+  .stats-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px; }
+  .stat-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:12px; text-align:center; }
+  .stat-card .v { font-size:22px; font-weight:700; color:var(--accent); font-variant-numeric:tabular-nums; }
+  .stat-card .k { font-size:10.5px; color:var(--dim); text-transform:uppercase; letter-spacing:.4px; margin-top:4px; }
+  .week-strip { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; margin-bottom:16px; }
+  .day-cell { aspect-ratio:1; border-radius:8px; background:var(--card2); border:1px solid var(--border); display:grid; place-items:center; gap:2px; font-size:9.5px; color:var(--dim); text-align:center; }
+  .day-cell .lbl { font-weight:600; }
+  .day-cell.hit { background:linear-gradient(135deg, rgba(255,123,74,.25), rgba(227,179,65,.25)); border-color:var(--fire); color:var(--fire); font-weight:700; }
+  .day-cell.today { border-color:var(--accent); box-shadow:0 0 0 1px var(--accent); }
+  .day-cell.today .lbl { color:var(--accent); }
+  .chart { display:flex; align-items:flex-end; gap:4px; height:80px; padding:8px 0; margin-bottom:16px; }
+  .chart .bar { flex:1; background:linear-gradient(180deg, var(--accent), #1f6feb); border-radius:4px 4px 0 0; min-height:3px; }
+  .chart .bar.today { background:linear-gradient(180deg, var(--fire), var(--gold)); }
+  .chart-labels { display:flex; gap:4px; font-size:9px; color:var(--dim); margin-bottom:6px; }
+  .chart-labels span { flex:1; text-align:center; }
+  .quiz-history-row { display:flex; align-items:center; gap:10px; background:var(--card); border:1px solid var(--border); border-radius:10px; padding:9px 12px; margin-bottom:6px; font-size:12.5px; }
+  .quiz-history-row .qr-topic { flex:1; font-weight:600; }
+  .quiz-history-row .qr-score { font-weight:700; font-variant-numeric:tabular-nums; padding:2px 8px; border-radius:20px; font-size:11px; }
+  .quiz-history-row .qr-score.good { background:rgba(63,185,80,.15); color:#7ee787; }
+  .quiz-history-row .qr-score.mid { background:rgba(227,179,65,.15); color:var(--gold); }
+  .quiz-history-row .qr-score.bad { background:rgba(248,81,73,.15); color:#ff7b72; }
+  .quiz-history-row .qr-xp { font-size:11px; color:var(--gold); font-weight:700; }
+
+  .course-card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:14px; margin-bottom:12px; position:relative; overflow:hidden; cursor:pointer; }
+  .course-head { display:flex; align-items:center; gap:12px; margin-bottom:10px; }
+  .course-icon { width:44px; height:44px; border-radius:12px; background:linear-gradient(135deg, rgba(63,185,80,.2), rgba(31,111,235,.2)); display:grid; place-items:center; font-size:11px; font-weight:800; flex:0 0 44px; border:1px solid var(--border); color:var(--accent); letter-spacing:.3px; }
+  .course-icon.done { background:linear-gradient(135deg, var(--accent), #1f6feb); color:#04170a; }
+  .course-info { flex:1; min-width:0; }
+  .course-title { font-size:15px; font-weight:700; margin-bottom:2px; }
+  .course-meta { font-size:11px; color:var(--dim); }
+  .course-progress { height:6px; background:var(--card2); border-radius:3px; overflow:hidden; margin-top:8px; }
+  .course-progress-fill { height:100%; border-radius:3px; background:linear-gradient(90deg, var(--accent), #1f6feb); transition:width .4s; }
+  .course-status { position:absolute; top:12px; right:12px; font-size:10px; font-weight:700; padding:3px 9px; border-radius:20px; letter-spacing:.3px; }
+  .course-status.new { background:rgba(121,192,255,.15); color:var(--info); border:1px solid rgba(121,192,255,.4); }
+  .course-status.progress { background:rgba(227,179,65,.15); color:var(--gold); border:1px solid rgba(227,179,65,.4); }
+  .course-status.done { background:rgba(63,185,80,.15); color:var(--accent); border:1px solid rgba(63,185,80,.4); }
+
+  #lessonsPanel { position:fixed; inset:0; z-index:110; background:rgba(0,0,0,.6); display:none; align-items:flex-end; backdrop-filter:blur(4px); animation:fade .2s; }
+  #lessonsPanel.show { display:flex; }
+  .lesson-row { display:flex; align-items:center; gap:12px; background:var(--card); border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:8px; cursor:pointer; }
+  .lesson-row.locked { opacity:.5; cursor:not-allowed; }
+  .lesson-row.current { border-color:var(--accent); box-shadow:0 0 0 1px rgba(63,185,80,.3); }
+  .lesson-row.done { border-color:rgba(63,185,80,.4); }
+  .lesson-num { width:32px; height:32px; border-radius:9px; background:var(--card2); border:1px solid var(--border); display:grid; place-items:center; font-size:12px; font-weight:700; flex:0 0 32px; color:var(--dim); }
+  .lesson-row.done .lesson-num { background:var(--accent); color:#04170a; border-color:var(--accent2); }
+  .lesson-row.current .lesson-num { background:linear-gradient(135deg,var(--accent),#1f6feb); color:#04170a; border-color:#1f6feb; }
+  .lesson-info { flex:1; min-width:0; }
+  .lesson-title { font-size:14px; font-weight:600; margin-bottom:2px; }
+  .lesson-brief { font-size:11px; color:var(--dim); line-height:1.4; }
+
+  .backup-hero { text-align:center; padding:20px 14px; margin-bottom:16px; background:linear-gradient(135deg, rgba(63,185,80,.12), rgba(121,192,255,.12)); border:1px solid var(--border); border-radius:16px; }
+  .backup-hero .t { font-size:15px; font-weight:700; margin-bottom:4px; }
+  .backup-hero .s { font-size:12px; color:var(--dim); line-height:1.5; }
+  .backup-stats { display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-bottom:16px; }
+  .bstat { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:10px 6px; text-align:center; }
+  .bstat .v { font-size:16px; font-weight:700; color:var(--info); }
+  .bstat .k { font-size:9.5px; color:var(--dim); text-transform:uppercase; letter-spacing:.3px; margin-top:3px; }
+  .backup-action { display:flex; align-items:center; gap:12px; background:var(--card); border:1px solid var(--border); border-radius:12px; padding:14px; margin-bottom:10px; text-align:left; width:100%; color:var(--fg); transition:.15s; font-family:inherit; cursor:pointer; }
+  .backup-action:active { background:var(--card2); transform:scale(.99); }
+  .backup-action .ba-icon { width:40px; height:40px; border-radius:11px; background:linear-gradient(135deg, rgba(63,185,80,.2), rgba(31,111,235,.2)); display:grid; place-items:center; font-size:11px; font-weight:800; flex:0 0 40px; border:1px solid var(--border); color:var(--accent); }
+  .backup-action .ba-info { flex:1; min-width:0; }
+  .backup-action .ba-title { font-size:14px; font-weight:600; margin-bottom:2px; }
+  .backup-action .ba-desc { font-size:11.5px; color:var(--dim); line-height:1.4; }
+  .backup-action.danger .ba-icon { background:linear-gradient(135deg, rgba(248,81,73,.15), rgba(255,123,74,.15)); color:#ff7b72; }
+
+  .import-area { background:var(--card); border:1px dashed var(--border); border-radius:12px; padding:14px; margin-bottom:10px; }
+  .import-area textarea { width:100%; background:#0a0e15; color:var(--fg); border:1px solid var(--border); border-radius:8px; padding:10px; font-family:ui-monospace, monospace; font-size:11px; height:120px; resize:vertical; outline:none; }
+  .backup-note { font-size:11px; color:var(--dim); line-height:1.6; background:rgba(121,192,255,.06); border:1px solid rgba(121,192,255,.2); border-radius:10px; padding:10px 12px; margin-bottom:14px; }
+  .backup-note b { color:var(--info); }
+
+  .tools-section { margin-top:20px; padding-top:16px; border-top:1px solid var(--border); }
+  .tools-section .ts-title { font-size:12px; color:var(--dim); text-transform:uppercase; letter-spacing:.5px; font-weight:600; margin-bottom:10px; }
+  .tool-btn { display:flex; align-items:center; gap:10px; background:var(--card); border:1px solid var(--border); border-radius:12px; padding:13px 14px; color:var(--fg); font-size:14px; font-weight:500; width:100%; text-align:left; transition:.15s; margin-bottom:10px; position:relative; font-family:inherit; cursor:pointer; }
+  .tool-btn:active { background:var(--card2); transform:scale(.99); }
+  .tool-btn .tb-icon { width:32px; height:32px; border-radius:9px; background:linear-gradient(135deg, rgba(63,185,80,.18), rgba(31,111,235,.18)); display:grid; place-items:center; font-size:10px; font-weight:800; flex:0 0 32px; border:1px solid var(--border); color:var(--accent); }
+  .tool-btn .tb-label { flex:1; }
+
+  .quiz-bubble { padding:14px 16px; }
+  .quiz-header { margin-bottom:12px; border-bottom:1px solid var(--border); padding-bottom:8px; }
+  .quiz-title { font-size:14px; font-weight:700; }
+  .quiz-progress { font-size:11px; color:var(--dim); margin-top:2px; }
+  .quiz-question { font-size:15px; line-height:1.5; margin-bottom:12px; }
+  .quiz-choices { display:flex; flex-direction:column; gap:8px; }
+  .quiz-choice { text-align:left; padding:11px 13px; border-radius:10px; background:var(--card2); border:1px solid var(--border); color:var(--fg); font-size:14px; font-family:inherit; transition:.15s; white-space:normal; cursor:pointer; line-height:1.4; }
+  .quiz-choice:active { transform:scale(.99); }
+  .quiz-choice.locked { cursor:default; }
+  .quiz-choice.correct { background:rgba(63,185,80,.15); border-color:var(--accent); color:#7ee787; font-weight:600; }
+  .quiz-choice.wrong { background:rgba(248,81,73,.15); border-color:var(--danger); color:#ff7b72; }
+  .quiz-explain { margin-top:12px; padding:10px 12px; background:rgba(121,192,255,.08); border-left:3px solid var(--info); border-radius:8px; font-size:13px; line-height:1.5; }
+  .quiz-next { margin-top:12px; }
+  .quiz-result { text-align:center; padding:8px 0; }
+  .quiz-score { font-size:44px; font-weight:800; line-height:1; font-variant-numeric:tabular-nums; }
+  .quiz-pct { font-size:18px; color:var(--dim); margin-top:4px; }
+  .quiz-score-msg { font-size:14px; margin-top:10px; font-weight:600; }
+  .quiz-xp-award { display:inline-block; margin-top:12px; background:linear-gradient(135deg, var(--accent), #1f6feb); color:#04170a; font-weight:800; font-size:14px; padding:6px 14px; border-radius:20px; }
+  .rank-up { margin-top:12px; font-size:14px; color:var(--gold); font-weight:700; }
+  .quiz-topic-grid { display:grid; grid-template-columns:repeat(2, 1fr); gap:8px; margin-bottom:14px; }
+  .quiz-topic-btn { display:flex; align-items:center; gap:10px; background:var(--card); border:1px solid var(--border); border-radius:12px; padding:11px 12px; color:var(--fg); font-size:12.5px; text-align:left; transition:.15s; font-family:inherit; cursor:pointer; }
+  .quiz-topic-btn:active { background:var(--card2); transform:scale(.98); }
+  .quiz-topic-btn .qti { font-size:10px; font-weight:800; flex:0 0 auto; color:var(--accent); letter-spacing:.3px; }
+  .quiz-topic-btn .qtl { flex:1; font-weight:500; line-height:1.3; }
+  .quiz-topic-btn.special { grid-column: span 2; background:linear-gradient(135deg, rgba(63,185,80,.12), rgba(31,111,235,.12)); border-color:rgba(63,185,80,.4); }
+
+  /* Editor styles */
+  .editor-shell {
+    display:flex; flex-direction:column; gap:10px;
+  }
+  .editor-toolbar {
+    display:flex; gap:8px; align-items:center; flex-wrap:wrap;
+  }
+  .lang-select {
+    flex:1; min-width:120px; background:var(--card); color:var(--fg);
+    border:1px solid var(--border); border-radius:10px;
+    padding:9px 11px; font:inherit; font-size:13px; outline:none;
+  }
+  .lang-select:focus { border-color:var(--accent); }
+  .run-btn {
+    padding:9px 18px; border-radius:10px;
+    background:linear-gradient(135deg,var(--accent),#1f6feb);
+    border:none; color:#04170a; font-weight:800; font-size:13px;
+    font-family:inherit; cursor:pointer; letter-spacing:.3px;
+  }
+  .run-btn:active { transform:scale(.96); }
+  .run-btn:disabled { opacity:.5; }
+  .small-btn {
+    padding:9px 12px; border-radius:10px;
+    background:var(--card); border:1px solid var(--border);
+    color:var(--fg); font-weight:600; font-size:12px;
+    font-family:inherit; cursor:pointer;
+  }
+  .small-btn:active { background:var(--card2); transform:scale(.96); }
+  #codeArea {
+    width:100%; min-height:280px;
+    background:#0a0e15; color:#7ee787;
+    border:1px solid var(--border); border-radius:12px;
+    padding:14px; font-family:ui-monospace, Menlo, Consolas, monospace;
+    font-size:13px; line-height:1.55;
+    outline:none; resize:vertical;
+    white-space:pre; overflow-x:auto;
+    -webkit-text-fill-color:#7ee787;
+    tab-size:2;
+  }
+  #codeArea:focus { border-color:var(--accent); }
+  .output-shell {
+    background:#0a0e15; border:1px solid var(--border);
+    border-radius:12px; padding:12px;
+    font-family:ui-monospace, Menlo, Consolas, monospace;
+    font-size:12.5px; line-height:1.5;
+    color:var(--fg); max-height:280px; overflow:auto;
+    white-space:pre-wrap; word-wrap:break-word;
+  }
+  .output-shell .err { color:#ff7b72; }
+  .output-shell .ok { color:#7ee787; }
+  .output-label {
+    font-size:11px; color:var(--dim);
+    text-transform:uppercase; letter-spacing:.5px;
+    font-weight:600; margin:6px 0 4px;
+  }
+  .preview-frame {
+    width:100%; min-height:260px;
+    background:#fff; border-radius:12px;
+    border:1px solid var(--border);
+  }
+  .editor-hint { font-size:11.5px; color:var(--dim); line-height:1.5; }
+
+  /* Snippets */
+  .snippets-filter {
+    display:flex; gap:6px; overflow-x:auto; padding-bottom:10px;
+    scrollbar-width:none; margin-bottom:10px;
+  }
+  .snippets-filter::-webkit-scrollbar { display:none; }
+  .snippet-search {
+    width:100%; background:var(--card); color:var(--fg);
+    border:1px solid var(--border); border-radius:10px;
+    padding:10px 12px; font:inherit; font-size:14px; outline:none;
+    margin-bottom:10px;
+  }
+  .snippet-search:focus { border-color:var(--accent); }
+  .snippet-card {
+    background:var(--card); border:1px solid var(--border);
+    border-radius:12px; padding:12px 14px; margin-bottom:10px;
+  }
+  .snippet-title {
+    font-size:13.5px; font-weight:700; margin-bottom:4px;
+    color:var(--info);
+  }
+  .snippet-desc { font-size:11.5px; color:var(--dim); margin-bottom:8px; line-height:1.4; }
+  .snippet-code {
+    background:#0a0e15; border:1px solid var(--border);
+    border-radius:8px; padding:10px;
+    font-family:ui-monospace, Menlo, Consolas, monospace;
+    font-size:12px; line-height:1.5; color:#7ee787;
+    white-space:pre; overflow-x:auto;
+    max-height:220px;
+  }
+  .snippet-actions { display:flex; gap:6px; margin-top:8px; flex-wrap:wrap; }
+
+  .toast {
+    position:fixed; bottom:80px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--card2); border:1px solid var(--accent);
+    color:var(--fg); padding:10px 16px; border-radius:12px;
+    font-size:13px; font-weight:500; z-index:200;
+    opacity:0; pointer-events:none; transition:.25s;
+    box-shadow:0 8px 24px -8px rgba(0,0,0,.6);
+    max-width:90vw; text-align:center;
+  }
+  .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+  .toast.err { border-color:var(--danger); }
+  .toast.ok { border-color:var(--accent); }
+  .toast.gold { border-color:var(--gold); }
+  .toast.info { border-color:var(--info); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo" id="logoBox">CD</div>
+  <h1>Code Tutor<small>Learn and build</small></h1>
+  <div class="streak-pill" id="streakPill">STREAK <span id="streakNum">0</span></div>
+  <a class="nav-btn" href="index.html" title="Tutor">Tutor</a>
+  <a class="nav-btn" href="shs.html" title="SHS">SHS</a>
+  <button class="nav-btn" id="btnSet" title="Settings">Settings</button>
+</header>
+
+<div id="timerBar">
+  <span>TIME <span class="t-val" id="sessionTime">0:00</span></span>
+  <span class="goal-bar"><span class="goal-fill" id="goalFill"></span></span>
+  <span id="goalLbl">0/30m</span>
+  <span class="xp-pill" id="xpPill">0 XP</span>
+</div>
+
+<div id="lessonBanner">
+  <div class="lb-top">
+    <div class="lb-text">
+      <div class="lb-title" id="lbTitle">Lesson</div>
+      <div class="lb-sub" id="lbSub">Language</div>
+    </div>
+    <button class="lb-exit" id="lbExit">Exit</button>
+  </div>
+</div>
+
+<div id="modeBar">
+  <button class="mode-btn active" data-mode="chat">Chat</button>
+  <button class="mode-btn" data-mode="editor">Editor</button>
+  <button class="mode-btn" data-mode="snippets">Snippets</button>
+  <button class="mode-btn" data-mode="quiz">Quiz</button>
+</div>
+
+<!-- CHAT MODE -->
+<div class="panel active" id="panel-chat">
+  <div id="chat"></div>
+</div>
+
+<!-- EDITOR MODE -->
+<div class="panel" id="panel-editor">
+  <div class="editor-shell">
+    <div class="editor-toolbar">
+      <select class="lang-select" id="langSelect">
+        <option value="javascript">JavaScript</option>
+        <option value="python">Python</option>
+        <option value="html">HTML + CSS + JS (live preview)</option>
+        <option value="cpp">C++</option>
+        <option value="c">C</option>
+        <option value="java">Java</option>
+        <option value="go">Go</option>
+        <option value="rust">Rust</option>
+        <option value="php">PHP</option>
+        <option value="ruby">Ruby</option>
+        <option value="typescript">TypeScript</option>
+        <option value="csharp">C#</option>
+        <option value="bash">Bash</option>
+        <option value="sql">SQL</option>
+      </select>
+      <button class="run-btn" id="btnRun">Run</button>
+      <button class="small-btn" id="btnClearCode">Clear</button>
+      <button class="small-btn" id="btnExplainCode">Explain</button>
+    </div>
+    <textarea id="codeArea" spellcheck="false" autocorrect="off" autocapitalize="off" placeholder="// Write your code here, then tap Run"></textarea>
+    <div class="editor-hint">JavaScript and HTML run right here in your browser. Other languages run on a free public sandbox (emkc.org).</div>
+    <div class="output-label">Output</div>
+    <div class="output-shell" id="outputArea">Ready.</div>
+    <div id="previewWrap" style="display:none;">
+      <div class="output-label">Preview</div>
+      <iframe class="preview-frame" id="previewFrame" sandbox="allow-scripts allow-modals"></iframe>
+    </div>
+  </div>
+</div>
+
+<!-- SNIPPETS MODE -->
+<div class="panel" id="panel-snippets">
+  <input class="snippet-search" id="snippetSearch" type="text" placeholder="Search snippets…" autocomplete="off">
+  <div class="snippets-filter" id="snippetsFilter"></div>
+  <div id="snippetsBody"></div>
+</div>
+
+<!-- QUIZ MODE -->
+<div class="panel" id="panel-quiz">
+  <div style="padding:16px;">
+    <h2 style="margin:0 0 8px;font-size:18px;">Test your coding skills</h2>
+    <p class="sub">Choose a language for a practice quiz. Built-in questions work without an API key.</p>
+    <button class="btn primary" id="newQuiz">Choose a quiz</button>
+  </div>
+  <div id="quizChat" aria-live="polite"></div>
+</div>
+
+<div id="chips">
+  <button class="chip accent" data-msg="Teach me the next topic in my current language. Start teaching immediately with a short explanation and a code example.">Teach me</button>
+  <button class="chip quiz" id="chipQuiz">Quiz</button>
+  <button class="chip blue" data-msg="Give me a small coding exercise to solve. Show the problem, wait for my attempt, then review it.">Give me a task</button>
+  <button class="chip blue" data-msg="Explain this concept using a simple real-world analogy.">Explain simply</button>
+  <button class="chip" data-msg="Show me a small complete example with comments.">Show example</button>
+  <button class="chip" data-msg="This code has a bug. Help me find it by asking questions rather than telling me the answer.">Fix my bug</button>
+  <button class="chip" data-msg="Give me a quick 3-question quiz on what we just covered.">Quiz me</button>
+</div>
+
+<footer>
+  <textarea id="input" placeholder="Ask about code…" rows="1"></textarea>
+  <button id="btnMic" aria-label="Speak">MIC</button>
+  <button id="send" aria-label="Send">GO</button>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<!-- Settings -->
+<div id="settings">
+  <div class="sheet">
+    <h2>Settings</h2>
+    <p class="sub">Shared with the Tutor and SHS pages.</p>
+    <div class="field">
+      <label for="provider">AI Provider</label>
+      <select id="provider">
+        <option value="groq">Groq</option>
+        <option value="gemini">Google Gemini</option>
+      </select>
+      <div class="hint">Choose which service to use. Both keys are saved separately and shared across all three tutors.</div>
+    </div>
+    <div class="field">
+      <label for="apiKeyGroq">Groq API Key</label>
+      <input id="apiKeyGroq" type="password" placeholder="gsk_…" autocomplete="off" spellcheck="false">
+      <div class="hint">Get a key at <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer">console.groq.com/keys</a></div>
+    </div>
+    <div class="field">
+      <label for="apiKeyGemini">Gemini API Key</label>
+      <input id="apiKeyGemini" type="password" placeholder="AIza…" autocomplete="off" spellcheck="false">
+      <div class="hint">Get a key at <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">aistudio.google.com/apikey</a></div>
+    </div>
+    <div class="field">
+      <label for="model">Model</label>
+      <select id="model"></select>
+      <div class="hint">Options change with the provider. Changes take effect after Save &amp; Close.</div>
+    </div>
+    <div class="field">
+      <label>Daily goal (minutes)</label>
+      <input id="goalMin" type="number" min="5" max="240" step="5" value="30">
+    </div>
+    <div class="field">
+      <label>Current language focus</label>
+      <select id="focusLang">
+        <option value="python">Python</option>
+        <option value="javascript">JavaScript</option>
+        <option value="html">HTML/CSS</option>
+        <option value="cpp">C++</option>
+        <option value="c">C</option>
+        <option value="java">Java</option>
+        <option value="go">Go</option>
+        <option value="rust">Rust</option>
+        <option value="php">PHP</option>
+        <option value="ruby">Ruby</option>
+        <option value="typescript">TypeScript</option>
+        <option value="csharp">C#</option>
+        <option value="bash">Bash</option>
+        <option value="sql">SQL</option>
+        <option value="algorithms">Algorithms & Data Structures</option>
+        <option value="webdev">Full-Stack Web Dev</option>
+        <option value="git">Git</option>
+      </select>
+      <div class="hint">The tutor focuses on this language.</div>
+    </div>
+    <div class="switch">
+      <span>Read replies aloud<small>Speaks new replies while the speaker is on</small></span>
+      <div class="tog" id="togAuto"></div>
+    </div>
+    <div class="switch">
+      <span>Beginner mode<small>Simpler explanations, more examples</small></span>
+      <div class="tog" id="togBeginner"></div>
+    </div>
+    <div class="switch">
+      <span>Voice<small id="voiceName">Default</small></span>
+      <select id="voice" style="width:auto; max-width:180px; padding:6px 8px; font-size:12px; background:var(--card); color:var(--fg); border:1px solid var(--border); border-radius:8px;"></select>
+    </div>
+    <div class="switch">
+      <span>Speed<small id="rateVal">1.0x</small></span>
+      <input id="rate" type="range" min="0.6" max="1.6" step="0.1" value="1" style="width:140px;">
+    </div>
+    <div class="row">
+      <button class="btn" id="btnVoice" title="Toggle voice" aria-label="Mute spoken replies">🔊</button>
+      <button class="btn" id="testVoice">Test voice</button>
+      <button class="btn" id="clearChat">Clear chat</button>
+    </div>
+
+    <div class="tools-section">
+      <div class="ts-title">Tools</div>
+      <button class="tool-btn" id="toolStats"><div class="tb-icon">ST</div><div class="tb-label">Stats & Streaks</div></button>
+      <button class="tool-btn" id="toolProgress"><div class="tb-icon">PR</div><div class="tb-label">Language Progress</div></button>
+      <button class="tool-btn" id="toolLessons"><div class="tb-icon">LS</div><div class="tb-label">Lesson Paths</div></button>
+      <button class="tool-btn" id="toolNotes"><div class="tb-icon">NT</div><div class="tb-label">Notes</div></button>
+      <button class="tool-btn" id="toolBackup"><div class="tb-icon">BK</div><div class="tb-label">Backup & Restore</div></button>
+    </div>
+
+    <div class="row">
+      <button class="btn primary" id="saveSet">Save & Close</button>
+    </div>
+    <div class="status-pill">
+      <div class="dot" id="statusDot"></div>
+      <span id="statusText">Ready</span>
+    </div>
+  </div>
+</div>
+
+<!-- Progress -->
+<div id="progressPanel">
+  <div class="sheet">
+    <h2>Language Progress</h2>
+    <p class="sub">Your mastery level per language.</p>
+    <div id="progressBody"></div>
+    <div class="row">
+      <button class="btn danger" id="resetProg">Reset Progress</button>
+      <button class="btn primary" id="closeProg">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Notes -->
+<div id="notesPanel">
+  <div class="sheet">
+    <h2>Your Notes</h2>
+    <p class="sub">Saved from the code tutor.</p>
+    <div class="notes-search"><input id="noteSearch" type="text" placeholder="Search notes…" autocomplete="off"></div>
+    <div class="notes-tag-filter" id="tagFilter"></div>
+    <div class="notes-count" id="notesCount"></div>
+    <div id="notesBody"></div>
+    <div class="row">
+      <button class="btn" id="exportNotes">Export notes</button>
+      <button class="btn danger" id="clearNotes">Delete all</button>
+    </div>
+    <div class="row"><button class="btn primary" id="closeNotes">Close</button></div>
+  </div>
+</div>
+
+<!-- Stats -->
+<div id="statsPanel">
+  <div class="sheet">
+    <h2>Your Stats</h2>
+    <p class="sub">Shared with the Tutor and SHS pages.</p>
+    <div id="statsBody"></div>
+    <div class="row">
+      <button class="btn danger" id="resetStats">Reset Stats</button>
+      <button class="btn primary" id="closeStats">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Lessons -->
+<div id="coursesPanel">
+  <div class="sheet">
+    <h2>Lesson Paths</h2>
+    <p class="sub">Structured lessons per language.</p>
+    <div id="coursesBody"></div>
+    <div class="row"><button class="btn primary" id="closeCourses">Close</button></div>
+  </div>
+</div>
+
+<div id="lessonsPanel">
+  <div class="sheet">
+    <h2 id="lessonsTitle">Lessons</h2>
+    <p class="sub" id="lessonsSub"></p>
+    <div id="lessonsBody"></div>
+    <div class="row"><button class="btn primary" id="closeLessons">Back</button></div>
+  </div>
+</div>
+
+<!-- Backup -->
+<div id="backupPanel">
+  <div class="sheet">
+    <h2>Backup & Restore</h2>
+    <p class="sub">Shared with Tutor and SHS pages.</p>
+    <div class="backup-hero">
+      <div class="t">Your learning data</div>
+      <div class="s">Everything stays on this phone unless you export it.</div>
+    </div>
+    <div class="backup-stats" id="backupStats"></div>
+    <div class="backup-note">
+      <b>Shared across all three pages.</b> Export here and the Tutor and SHS pages see the same data. Your saved API keys are included in plain text. Keep backup files private and do not share them. Save your key in Settings before exporting.
+    </div>
+    <button class="backup-action" id="actExport">
+      <div class="ba-icon">DL</div>
+      <div class="ba-info"><div class="ba-title">Export backup</div><div class="ba-desc">Download a .json with everything — Code, Tutor, and SHS progress combined, plus your saved API keys</div></div>
+    </button>
+    <button class="backup-action" id="actShowImport">
+      <div class="ba-icon">UP</div>
+      <div class="ba-info"><div class="ba-title">Restore from backup</div><div class="ba-desc">Paste a backup JSON or pick a file to restore</div></div>
+    </button>
+    <div class="import-area" id="importArea" style="display:none;">
+      <label style="font-size:12px;color:var(--dim);font-weight:500;display:block;margin-bottom:6px;">Pick a backup file</label>
+      <input type="file" id="importFile" accept=".json,application/json" style="width:100%;background:var(--card);color:var(--fg);border:1px solid var(--border);border-radius:8px;padding:8px;font-size:12px;">
+      <div style="text-align:center;font-size:11px;color:var(--dim);margin:10px 0;">— or paste JSON below —</div>
+      <textarea id="importText" placeholder='{"version":6,"exported":"…","data":{…}}'></textarea>
+      <div class="row" style="margin-top:12px;">
+        <button class="btn" id="cancelImport">Cancel</button>
+        <button class="btn gold" id="doImport">Restore</button>
+      </div>
+    </div>
+    <div class="row"><button class="btn primary" id="closeBackup">Close</button></div>
+  </div>
+</div>
+
+<!-- Quiz sheet -->
+<div id="quizSheet">
+  <div class="sheet">
+    <h2>Start a Quiz</h2>
+    <p class="sub">Exam-style questions. 20 XP per correct. Perfect = +50 bonus.</p>
+    <div class="quiz-topic-grid" id="quizTopicGrid"></div>
+    <div class="row"><button class="btn primary" id="closeQuizSheet">Cancel</button></div>
+  </div>
+</div>
+<script>
+const PISTON_URL = "https://emkc.org/api/v2/piston/execute";
+const BACKUP_VERSION = 6;
+
+/* ============ LESSON PATHS ============ */
+/* Each language = a course with Beginner / Intermediate / Advanced lessons. */
+const CODE_LANGS = [
+  { slug:"python", title:"Python", label:"PY", blurb:"The friendliest language to start with.", lessons:[
+    { id:"py-1", level:"Beginner", title:"Hello, Python", brief:"Print, comments, running your first program" },
+    { id:"py-2", level:"Beginner", title:"Variables and Types", brief:"Strings, numbers, booleans, type()" },
+    { id:"py-3", level:"Beginner", title:"Input and Output", brief:"input(), print(), f-strings" },
+    { id:"py-4", level:"Beginner", title:"If / Else", brief:"Conditions, comparison, elif" },
+    { id:"py-5", level:"Beginner", title:"Loops", brief:"for, while, range, break, continue" },
+    { id:"py-6", level:"Beginner", title:"Lists and Tuples", brief:"Ordered data, indexing, slicing" },
+    { id:"py-7", level:"Beginner", title:"Dictionaries and Sets", brief:"Key-value pairs, uniqueness" },
+    { id:"py-8", level:"Intermediate", title:"Functions", brief:"def, arguments, return, scope" },
+    { id:"py-9", level:"Intermediate", title:"Files", brief:"Reading, writing, with open()" },
+    { id:"py-10", level:"Intermediate", title:"Errors", brief:"try / except / finally" },
+    { id:"py-11", level:"Intermediate", title:"Modules and Packages", brief:"import, pip, the standard library" },
+    { id:"py-12", level:"Intermediate", title:"Classes and Objects", brief:"OOP basics: __init__, methods, self" },
+    { id:"py-13", level:"Advanced", title:"Decorators and Generators", brief:"Higher-order functions, yield" },
+    { id:"py-14", level:"Advanced", title:"Comprehensions", brief:"List/dict/set comprehensions" },
+    { id:"py-15", level:"Advanced", title:"Concurrency", brief:"Threading, asyncio, multiprocessing" },
+    { id:"py-16", level:"Advanced", title:"Testing", brief:"unittest, pytest, mocking" }
+  ]},
+  { slug:"javascript", title:"JavaScript", label:"JS", blurb:"The language of the web.", lessons:[
+    { id:"js-1", level:"Beginner", title:"Hello, JavaScript", brief:"console.log, script tags, the browser" },
+    { id:"js-2", level:"Beginner", title:"Variables and Types", brief:"let, const, var, string, number, boolean" },
+    { id:"js-3", level:"Beginner", title:"Operators and Conditions", brief:"Math, comparison, if/else, ternary" },
+    { id:"js-4", level:"Beginner", title:"Loops", brief:"for, while, for...of, for...in" },
+    { id:"js-5", level:"Beginner", title:"Functions", brief:"Declaration, arrow functions, arguments" },
+    { id:"js-6", level:"Beginner", title:"Arrays", brief:"push, pop, map, filter, reduce" },
+    { id:"js-7", level:"Beginner", title:"Objects", brief:"Key-value, nested, methods" },
+    { id:"js-8", level:"Intermediate", title:"DOM Basics", brief:"querySelector, addEventListener" },
+    { id:"js-9", level:"Intermediate", title:"Events", brief:"Clicks, input, submit, event object" },
+    { id:"js-10", level:"Intermediate", title:"Async and Promises", brief:"Promise, async/await, try/catch" },
+    { id:"js-11", level:"Intermediate", title:"Fetch API", brief:"HTTP requests, JSON, error handling" },
+    { id:"js-12", level:"Intermediate", title:"Classes", brief:"class, constructor, extends, this" },
+    { id:"js-13", level:"Advanced", title:"Modules", brief:"import/export, default vs named" },
+    { id:"js-14", level:"Advanced", title:"Closures and Scope", brief:"Lexical scope, IIFE, currying" },
+    { id:"js-15", level:"Advanced", title:"Generators and Iterators", brief:"function*, yield, Symbol.iterator" },
+    { id:"js-16", level:"Advanced", title:"Error Handling Patterns", brief:"Custom errors, global handlers" }
+  ]},
+  { slug:"html", title:"HTML", label:"HT", blurb:"Structure of every web page.", lessons:[
+    { id:"ht-1", level:"Beginner", title:"What is HTML?", brief:"Tags, elements, attributes" },
+    { id:"ht-2", level:"Beginner", title:"Headings and Text", brief:"h1-h6, p, strong, em" },
+    { id:"ht-3", level:"Beginner", title:"Links and Images", brief:"a, img, alt, relative vs absolute" },
+    { id:"ht-4", level:"Beginner", title:"Lists and Tables", brief:"ul, ol, table, thead, tbody" },
+    { id:"ht-5", level:"Intermediate", title:"Forms", brief:"input, textarea, select, validation" },
+    { id:"ht-6", level:"Intermediate", title:"Semantic HTML", brief:"header, nav, main, article, section" },
+    { id:"ht-7", level:"Intermediate", title:"Meta Tags", brief:"charset, viewport, SEO basics" },
+    { id:"ht-8", level:"Advanced", title:"Accessibility", brief:"ARIA, alt text, keyboard nav" }
+  ]},
+  { slug:"css", title:"CSS", label:"CS", blurb:"Style and layout for the web.", lessons:[
+    { id:"cs-1", level:"Beginner", title:"What is CSS?", brief:"Selectors, properties, values" },
+    { id:"cs-2", level:"Beginner", title:"Colors and Text", brief:"color, background, font-family" },
+    { id:"cs-3", level:"Beginner", title:"The Box Model", brief:"margin, border, padding, content" },
+    { id:"cs-4", level:"Beginner", title:"Display and Position", brief:"block, inline, flex basics, position" },
+    { id:"cs-5", level:"Intermediate", title:"Flexbox", brief:"justify, align, gap, wrap" },
+    { id:"cs-6", level:"Intermediate", title:"Grid", brief:"grid-template, gap, auto-fit" },
+    { id:"cs-7", level:"Intermediate", title:"Responsive Design", brief:"media queries, mobile-first" },
+    { id:"cs-8", level:"Intermediate", title:"Transitions and Transforms", brief:"hover, transform, transition" },
+    { id:"cs-9", level:"Advanced", title:"Animations", brief:"@keyframes, animation property" },
+    { id:"cs-10", level:"Advanced", title:"CSS Variables", brief:"--custom-prop, var()" },
+    { id:"cs-11", level:"Advanced", title:"Modern Layouts", brief:"container queries, subgrid, clamp" }
+  ]},
+  { slug:"c", title:"C", label:"C", blurb:"The language underneath everything.", lessons:[
+    { id:"c-1", level:"Beginner", title:"Hello, C", brief:"#include, printf, compiling" },
+    { id:"c-2", level:"Beginner", title:"Variables and Types", brief:"int, float, char, sizeof" },
+    { id:"c-3", level:"Beginner", title:"Operators and Conditions", brief:"Arithmetic, if/else, switch" },
+    { id:"c-4", level:"Beginner", title:"Loops", brief:"for, while, do-while, break, continue" },
+    { id:"c-5", level:"Intermediate", title:"Functions", brief:"Prototypes, arguments, return values" },
+    { id:"c-6", level:"Intermediate", title:"Arrays and Strings", brief:"Fixed-size arrays, char arrays" },
+    { id:"c-7", level:"Intermediate", title:"Pointers", brief:"*, &, pointer arithmetic" },
+    { id:"c-8", level:"Intermediate", title:"Memory", brief:"malloc, free, stack vs heap" },
+    { id:"c-9", level:"Advanced", title:"Structs and Unions", brief:"Custom data, typedef" },
+    { id:"c-10", level:"Advanced", title:"Files", brief:"fopen, fread, fwrite, fclose" }
+  ]},
+  { slug:"cpp", title:"C++", label:"C+", blurb:"C with objects and the STL.", lessons:[
+    { id:"cp-1", level:"Beginner", title:"Hello, C++", brief:"iostream, cout, cin" },
+    { id:"cp-2", level:"Beginner", title:"References", brief:"&, pass by reference" },
+    { id:"cp-3", level:"Beginner", title:"Strings", brief:"std::string, methods" },
+    { id:"cp-4", level:"Intermediate", title:"Classes and Objects", brief:"class, public/private, constructors" },
+    { id:"cp-5", level:"Intermediate", title:"Inheritance and Polymorphism", brief:"virtual, override, abstract" },
+    { id:"cp-6", level:"Intermediate", title:"STL Containers", brief:"vector, map, set, unordered_map" },
+    { id:"cp-7", level:"Intermediate", title:"Algorithms", brief:"sort, find, transform, lambdas" },
+    { id:"cp-8", level:"Advanced", title:"Smart Pointers", brief:"unique_ptr, shared_ptr, weak_ptr" },
+    { id:"cp-9", level:"Advanced", title:"Move Semantics", brief:"rvalue refs, std::move" },
+    { id:"cp-10", level:"Advanced", title:"Templates", brief:"Function and class templates" }
+  ]},
+  { slug:"java", title:"Java", label:"JV", blurb:"Write once, run anywhere.", lessons:[
+    { id:"jv-1", level:"Beginner", title:"Hello, Java", brief:"public static void main, System.out" },
+    { id:"jv-2", level:"Beginner", title:"Types", brief:"int, double, boolean, String" },
+    { id:"jv-3", level:"Beginner", title:"Control Flow", brief:"if, switch, for, while" },
+    { id:"jv-4", level:"Intermediate", title:"Classes", brief:"Objects, constructors, this" },
+    { id:"jv-5", level:"Intermediate", title:"Inheritance", brief:"extends, super, @Override" },
+    { id:"jv-6", level:"Intermediate", title:"Interfaces", brief:"interface, implements, default methods" },
+    { id:"jv-7", level:"Intermediate", title:"Collections", brief:"List, Map, Set, ArrayList, HashMap" },
+    { id:"jv-8", level:"Advanced", title:"Generics", brief:"Type parameters, bounded types" },
+    { id:"jv-9", level:"Advanced", title:"Streams", brief:"map, filter, collect, Optional" },
+    { id:"jv-10", level:"Advanced", title:"Exceptions", brief:"try/catch/finally, custom exceptions" }
+  ]},
+  { slug:"go", title:"Go", label:"GO", blurb:"Simple, fast, concurrency built in.", lessons:[
+    { id:"go-1", level:"Beginner", title:"Hello, Go", brief:"package main, fmt.Println" },
+    { id:"go-2", level:"Beginner", title:"Variables and Types", brief:":=, var, int, string, bool" },
+    { id:"go-3", level:"Beginner", title:"Control Flow", brief:"if, for (no while!), switch" },
+    { id:"go-4", level:"Intermediate", title:"Functions", brief:"Multiple return values, defer" },
+    { id:"go-5", level:"Intermediate", title:"Structs and Methods", brief:"type, func (r Receiver)" },
+    { id:"go-6", level:"Intermediate", title:"Interfaces", brief:"Implicit implementation" },
+    { id:"go-7", level:"Intermediate", title:"Slices and Maps", brief:"append, make, delete" },
+    { id:"go-8", level:"Advanced", title:"Goroutines", brief:"go func(), channels, sync" },
+    { id:"go-9", level:"Advanced", title:"Error Handling", brief:"error interface, wrapping" },
+    { id:"go-10", level:"Advanced", title:"Testing", brief:"go test, table-driven tests" }
+  ]},
+  { slug:"rust", title:"Rust", label:"RS", blurb:"Memory safety without garbage collection.", lessons:[
+    { id:"rs-1", level:"Beginner", title:"Hello, Rust", brief:"cargo, println!" },
+    { id:"rs-2", level:"Beginner", title:"Variables and Mutability", brief:"let, mut, const" },
+    { id:"rs-3", level:"Beginner", title:"Types", brief:"i32, f64, bool, char, String vs &str" },
+    { id:"rs-4", level:"Intermediate", title:"Ownership", brief:"Move, borrow, lifetimes" },
+    { id:"rs-5", level:"Intermediate", title:"References and Borrowing", brief:"&, &mut, the borrow checker" },
+    { id:"rs-6", level:"Intermediate", title:"Structs and Enums", brief:"struct, enum, impl" },
+    { id:"rs-7", level:"Intermediate", title:"Pattern Matching", brief:"match, if let, while let" },
+    { id:"rs-8", level:"Advanced", title:"Error Handling", brief:"Result, Option, ? operator" },
+    { id:"rs-9", level:"Advanced", title:"Traits", brief:"Trait bounds, generic constraints" },
+    { id:"rs-10", level:"Advanced", title:"Concurrency", brief:"threads, channels, Arc<Mutex>" }
+  ]},
+  { slug:"php", title:"PHP", label:"PH", blurb:"Powers most of the web's backends.", lessons:[
+    { id:"ph-1", level:"Beginner", title:"Hello, PHP", brief:"<?php ?>, echo, running locally" },
+    { id:"ph-2", level:"Beginner", title:"Variables and Types", brief:"$, string, int, float, bool" },
+    { id:"ph-3", level:"Beginner", title:"Arrays", brief:"Indexed, associative, loops" },
+    { id:"ph-4", level:"Intermediate", title:"Functions", brief:"def, default args, return types" },
+    { id:"ph-5", level:"Intermediate", title:"Forms and GET/POST", brief:"$_GET, $_POST, sanitising" },
+    { id:"ph-6", level:"Intermediate", title:"Sessions and Cookies", brief:"$_SESSION, setcookie" },
+    { id:"ph-7", level:"Advanced", title:"Classes", brief:"OOP in PHP, namespaces" },
+    { id:"ph-8", level:"Advanced", title:"Database with PDO", brief:"Prepared statements, SQL injection" }
+  ]},
+  { slug:"ruby", title:"Ruby", label:"RB", blurb:"Elegant syntax, Ruby on Rails.", lessons:[
+    { id:"rb-1", level:"Beginner", title:"Hello, Ruby", brief:"puts, irb, running scripts" },
+    { id:"rb-2", level:"Beginner", title:"Variables and Types", brief:"String, Integer, Symbol, nil" },
+    { id:"rb-3", level:"Beginner", title:"Control Flow", brief:"if, unless, case, while" },
+    { id:"rb-4", level:"Intermediate", title:"Methods", brief:"def, default args, blocks" },
+    { id:"rb-5", level:"Intermediate", title:"Arrays and Hashes", brief:"each, map, select, hash syntax" },
+    { id:"rb-6", level:"Intermediate", title:"Classes and Modules", brief:"OOP, mixins, attr_accessor" },
+    { id:"rb-7", level:"Advanced", title:"Blocks and Procs", brief:"yield, Proc, lambda" },
+    { id:"rb-8", level:"Advanced", title:"Metaprogramming", brief:"method_missing, define_method" }
+  ]},
+  { slug:"typescript", title:"TypeScript", label:"TS", blurb:"JavaScript with types.", lessons:[
+    { id:"ts-1", level:"Beginner", title:"Why TypeScript?", brief:"Compile-time safety, tsconfig" },
+    { id:"ts-2", level:"Beginner", title:"Basic Types", brief:"string, number, boolean, any, unknown" },
+    { id:"ts-3", level:"Beginner", title:"Functions", brief:"Typed args, return types, optional" },
+    { id:"ts-4", level:"Intermediate", title:"Interfaces and Types", brief:"interface, type, extending" },
+    { id:"ts-5", level:"Intermediate", title:"Union and Intersection", brief:"A | B, A & B, type narrowing" },
+    { id:"ts-6", level:"Intermediate", title:"Generics", brief:"<T>, constraints, keyof" },
+    { id:"ts-7", level:"Advanced", title:"Enums and Literal Types", brief:"enum, as const, discriminated unions" },
+    { id:"ts-8", level:"Advanced", title:"Utility Types", brief:"Partial, Pick, Omit, Record" }
+  ]},
+  { slug:"csharp", title:"C#", label:"C#", blurb:".NET, Unity, and enterprise apps.", lessons:[
+    { id:"csh-1", level:"Beginner", title:"Hello, C#", brief:"Console.WriteLine, dotnet run" },
+    { id:"csh-2", level:"Beginner", title:"Variables and Types", brief:"int, double, string, bool, var" },
+    { id:"csh-3", level:"Beginner", title:"Control Flow", brief:"if, switch, for, foreach" },
+    { id:"csh-4", level:"Intermediate", title:"Methods", brief:"Parameters, overloading, out, ref" },
+    { id:"csh-5", level:"Intermediate", title:"Classes and Structs", brief:"Properties, constructors, records" },
+    { id:"csh-6", level:"Intermediate", title:"LINQ", brief:"Where, Select, OrderBy, GroupBy" },
+    { id:"csh-7", level:"Advanced", title:"Async/Await", brief:"Task, async methods, cancellation" },
+    { id:"csh-8", level:"Advanced", title:"Generics and Interfaces", brief:"<T>, constraints, IDisposable" }
+  ]},
+  { slug:"bash", title:"Bash", label:"SH", blurb:"Command the shell.", lessons:[
+    { id:"ba-1", level:"Beginner", title:"Your First Script", brief:"#!/bin/bash, chmod +x, running" },
+    { id:"ba-2", level:"Beginner", title:"Variables", brief:"Assignment, $VAR, quoting" },
+    { id:"ba-3", level:"Beginner", title:"Pipes and Redirection", brief:"|, >, >>, 2>&1" },
+    { id:"ba-4", level:"Intermediate", title:"Loops", brief:"for, while, over files, over args" },
+    { id:"ba-5", level:"Intermediate", title:"Conditionals", brief:"if, case, test [ ], [[ ]]" },
+    { id:"ba-6", level:"Intermediate", title:"Functions", brief:"Definition, arguments, return" },
+    { id:"ba-7", level:"Advanced", title:"Text Processing", brief:"grep, sed, awk, cut" },
+    { id:"ba-8", level:"Advanced", title:"Error Handling", brief:"set -e, trap, exit codes" }
+  ]},
+  { slug:"sql", title:"SQL", label:"SQ", blurb:"Query databases.", lessons:[
+    { id:"sq-1", level:"Beginner", title:"What is a Database?", brief:"Tables, rows, columns, keys" },
+    { id:"sq-2", level:"Beginner", title:"SELECT Basics", brief:"SELECT, FROM, WHERE, ORDER BY" },
+    { id:"sq-3", level:"Beginner", title:"Filtering", brief:"AND, OR, IN, LIKE, IS NULL" },
+    { id:"sq-4", level:"Intermediate", title:"Aggregates", brief:"COUNT, SUM, AVG, MIN, MAX" },
+    { id:"sq-5", level:"Intermediate", title:"GROUP BY and HAVING", brief:"Grouping rows, filtering groups" },
+    { id:"sq-6", level:"Intermediate", title:"JOINs", brief:"INNER, LEFT, RIGHT, FULL, CROSS" },
+    { id:"sq-7", level:"Advanced", title:"Subqueries", brief:"Scalar, IN, EXISTS, correlated" },
+    { id:"sq-8", level:"Advanced", title:"Indexes and Performance", brief:"EXPLAIN, when to index" }
+  ]},
+  { slug:"algorithms", title:"Algorithms & Data Structures", label:"AL", blurb:"The ideas behind efficient code.", lessons:[
+    { id:"al-1", level:"Beginner", title:"Big O Notation", brief:"Time and space complexity" },
+    { id:"al-2", level:"Beginner", title:"Arrays and Lists", brief:"Access, insert, delete costs" },
+    { id:"al-3", level:"Beginner", title:"Stacks and Queues", brief:"LIFO vs FIFO, use cases" },
+    { id:"al-4", level:"Intermediate", title:"Linked Lists", brief:"Singly, doubly, traversal" },
+    { id:"al-5", level:"Intermediate", title:"Hash Tables", brief:"Hashing, collisions, lookup speed" },
+    { id:"al-6", level:"Intermediate", title:"Sorting", brief:"Bubble, insertion, merge, quick" },
+    { id:"al-7", level:"Intermediate", title:"Searching", brief:"Linear, binary search" },
+    { id:"al-8", level:"Advanced", title:"Trees", brief:"Binary trees, BST, traversal" },
+    { id:"al-9", level:"Advanced", title:"Heaps and Priority Queues", brief:"Min-heap, max-heap" },
+    { id:"al-10", level:"Advanced", title:"Graphs", brief:"BFS, DFS, shortest path" },
+    { id:"al-11", level:"Advanced", title:"Dynamic Programming", brief:"Memoisation, tabulation" }
+  ]},
+  { slug:"webdev", title:"Full-Stack Web Dev", label:"WB", blurb:"Build complete web apps.", lessons:[
+    { id:"wb-1", level:"Beginner", title:"How the Web Works", brief:"HTTP, DNS, browsers, servers" },
+    { id:"wb-2", level:"Beginner", title:"Your First Page", brief:"HTML + CSS + JS in one file" },
+    { id:"wb-3", level:"Intermediate", title:"Making it Interactive", brief:"DOM, events, forms" },
+    { id:"wb-4", level:"Intermediate", title:"Fetching Data", brief:"APIs, JSON, async/await" },
+    { id:"wb-5", level:"Intermediate", title:"A Simple Backend", brief:"Node + Express, routes" },
+    { id:"wb-6", level:"Intermediate", title:"A Real Database", brief:"SQLite or Postgres basics" },
+    { id:"wb-7", level:"Advanced", title:"Authentication", brief:"Sessions, JWTs, password hashing" },
+    { id:"wb-8", level:"Advanced", title:"Deploying", brief:"Static hosting, VPS, environment vars" }
+  ]},
+  { slug:"git", title:"Git", label:"GT", blurb:"Version control for every project.", lessons:[
+    { id:"gt-1", level:"Beginner", title:"What is Git?", brief:"Repos, commits, history" },
+    { id:"gt-2", level:"Beginner", title:"Basic Commands", brief:"init, add, commit, status, log" },
+    { id:"gt-3", level:"Intermediate", title:"Branches", brief:"branch, checkout, switch, merge" },
+    { id:"gt-4", level:"Intermediate", title:"Remotes", brief:"GitHub, push, pull, clone" },
+    { id:"gt-5", level:"Intermediate", title:"Undoing Things", brief:"reset, revert, stash" },
+    { id:"gt-6", level:"Advanced", title:"Rebase and Cherry-pick", brief:"Rewriting history safely" },
+    { id:"gt-7", level:"Advanced", title:"Pull Requests", brief:"Fork, branch, PR workflow" }
+  ]}
+];
+
+/* ============ RUNNABLE LANGUAGES (Piston) ============ */
+const PISTON_LANGS = {
+  python:     { language: "python",     version: "3.10.0" },
+  javascript: { language: "javascript", version: "18.15.0" },
+  cpp:        { language: "c++",        version: "10.2.0" },
+  c:          { language: "c",          version: "10.2.0" },
+  java:       { language: "java",       version: "15.0.2" },
+  go:         { language: "go",         version: "1.16.2" },
+  rust:       { language: "rust",       version: "1.68.2" },
+  php:        { language: "php",        version: "8.2.3" },
+  ruby:       { language: "ruby",       version: "3.0.1" },
+  typescript: { language: "typescript", version: "5.0.3" },
+  csharp:     { language: "csharp",     version: "6.12.0" },
+  bash:       { language: "bash",       version: "5.2.0" },
+  sql:        { language: "sqlite3",    version: "3.36.0" }
+};
+
+/* ============ STARTER CODE PER LANGUAGE ============ */
+const STARTER = {
+  python:     'print("Hello, world!")\n\nfor i in range(5):\n    print("Number:", i)\n',
+  javascript: 'console.log("Hello, world!");\n\nfor (let i = 0; i < 5; i++) {\n  console.log("Number:", i);\n}\n',
+  html: '<!DOCTYPE html>\n<html>\n<head>\n  <style>\n    body { font-family: sans-serif; padding: 20px; }\n    h1 { color: #1f6feb; }\n  </style>\n</head>\n<body>\n  <h1>Hello from HTML!</h1>\n  <p>Edit the code and tap Run to see it change.</p>\n  <button onclick="alert(\'You clicked!\')">Click me</button>\n</body>\n</html>',
+  cpp:        '#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << "Hello, world!" << endl;\n    return 0;\n}\n',
+  c:          '#include <stdio.h>\n\nint main() {\n    printf("Hello, world!\\n");\n    return 0;\n}\n',
+  java:       'public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello, world!");\n    }\n}\n',
+  go:         'package main\n\nimport "fmt"\n\nfunc main() {\n    fmt.Println("Hello, world!")\n}\n',
+  rust:       'fn main() {\n    println!("Hello, world!");\n}\n',
+  php:        '<?php\necho "Hello, world!\\n";\n?>\n',
+  ruby:       'puts "Hello, world!"\n',
+  typescript: 'const greeting: string = "Hello, world!";\nconsole.log(greeting);\n',
+  csharp:     'using System;\n\nclass Program {\n    static void Main() {\n        Console.WriteLine("Hello, world!");\n    }\n}\n',
+  bash:       '#!/bin/bash\necho "Hello, world!"\n',
+  sql:        'CREATE TABLE users (id INTEGER, name TEXT);\nINSERT INTO users VALUES (1, \'Ama\');\nINSERT INTO users VALUES (2, \'Kofi\');\nSELECT * FROM users;\n'
+};
+
+/* ============ SNIPPETS LIBRARY ============ */
+const SNIPPETS = [
+  // ---- Python ----
+  { lang:"Python", title:"Print to console", desc:"The simplest way to show output.", code:'print("Hello, world!")' },
+  { lang:"Python", title:"Variables and f-strings", desc:"Store values and format them into text.", code:'name = "Ama"\nage = 17\nprint(f"{name} is {age} years old")' },
+  { lang:"Python", title:"Read user input", desc:"Get text from the user.", code:'name = input("What is your name? ")\nprint("Hello,", name)' },
+  { lang:"Python", title:"If / elif / else", desc:"Branch on conditions.", code:'score = 72\nif score >= 80:\n    print("A")\nelif score >= 70:\n    print("B")\nelse:\n    print("C")' },
+  { lang:"Python", title:"For loop with range", desc:"Repeat code a set number of times.", code:'for i in range(1, 6):\n    print(i)' },
+  { lang:"Python", title:"While loop", desc:"Repeat until a condition is false.", code:'count = 0\nwhile count < 5:\n    print(count)\n    count += 1' },
+  { lang:"Python", title:"List basics", desc:"Ordered collection of items.", code:'fruits = ["apple", "banana", "mango"]\nfruits.append("orange")\nprint(fruits[0])   # apple\nprint(len(fruits)) # 4' },
+  { lang:"Python", title:"Dictionary", desc:"Key-value pairs.", code:'person = {"name": "Ama", "age": 17}\nprint(person["name"])\nperson["city"] = "Accra"' },
+  { lang:"Python", title:"Function with default argument", desc:"Reusable block of code.", code:'def greet(name, greeting="Hello"):\n    return f"{greeting}, {name}!"\n\nprint(greet("Ama"))\nprint(greet("Kofi", "Hi"))' },
+  { lang:"Python", title:"Read a file", desc:"Read text from disk.", code:'with open("data.txt", "r") as f:\n    for line in f:\n        print(line.strip())' },
+  { lang:"Python", title:"Write a file", desc:"Save text to disk.", code:'with open("output.txt", "w") as f:\n    f.write("Saved!\\n")' },
+  { lang:"Python", title:"Try / except", desc:"Handle errors gracefully.", code:'try:\n    n = int(input("Number: "))\n    print(10 / n)\nexcept ValueError:\n    print("That is not a number")\nexcept ZeroDivisionError:\n    print("Cannot divide by zero")' },
+  { lang:"Python", title:"Class with methods", desc:"Object-oriented basics.", code:'class Dog:\n    def __init__(self, name):\n        self.name = name\n\n    def bark(self):\n        return f"{self.name} says woof!"\n\nrex = Dog("Rex")\nprint(rex.bark())' },
+  { lang:"Python", title:"List comprehension", desc:"Build a list in one line.", code:'squares = [n * n for n in range(10)]\nevens = [n for n in range(20) if n % 2 == 0]' },
+
+  // ---- JavaScript ----
+  { lang:"JavaScript", title:"Print to console", desc:"Log output in the browser or Node.", code:'console.log("Hello, world!");' },
+  { lang:"JavaScript", title:"Variables", desc:"let for mutable, const for fixed.", code:'let score = 0;\nconst name = "Ama";\nscore = 10;' },
+  { lang:"JavaScript", title:"Template literals", desc:"Embed expressions in strings.", code:'const name = "Ama";\nconsole.log(`Hello, ${name}!`);' },
+  { lang:"JavaScript", title:"If / else", desc:"Branch on conditions.", code:'const score = 72;\nif (score >= 80) console.log("A");\nelse if (score >= 70) console.log("B");\nelse console.log("C");' },
+  { lang:"JavaScript", title:"For loop", desc:"Classic loop.", code:'for (let i = 0; i < 5; i++) {\n  console.log(i);\n}' },
+  { lang:"JavaScript", title:"Array methods", desc:"map, filter, reduce — the big three.", code:'const nums = [1, 2, 3, 4, 5];\nconst doubled = nums.map(n => n * 2);\nconst evens = nums.filter(n => n % 2 === 0);\nconst sum = nums.reduce((a, b) => a + b, 0);' },
+  { lang:"JavaScript", title:"Arrow function", desc:"Short function syntax.", code:'const add = (a, b) => a + b;\nconsole.log(add(2, 3));' },
+  { lang:"JavaScript", title:"Object", desc:"Key-value data.", code:'const person = { name: "Ama", age: 17 };\nconsole.log(person.name);\nperson.city = "Accra";' },
+  { lang:"JavaScript", title:"DOM: select element", desc:"Find elements in the page.", code:'const btn = document.querySelector("#myButton");\nconst items = document.querySelectorAll(".item");' },
+  { lang:"JavaScript", title:"DOM: event listener", desc:"React to clicks.", code:'document.querySelector("#btn").addEventListener("click", () => {\n  alert("Clicked!");\n});' },
+  { lang:"JavaScript", title:"Fetch JSON from an API", desc:"Async HTTP request.", code:'async function loadData() {\n  const res = await fetch("https://api.example.com/data");\n  const data = await res.json();\n  console.log(data);\n}' },
+  { lang:"JavaScript", title:"Class", desc:"Object-oriented JS.", code:'class Dog {\n  constructor(name) {\n    this.name = name;\n  }\n  bark() {\n    return `${this.name} says woof!`;\n  }\n}\nconst rex = new Dog("Rex");' },
+
+  // ---- HTML ----
+  { lang:"HTML", title:"Basic page structure", desc:"The skeleton of every page.", code:'<!DOCTYPE html>\n<html>\n<head>\n  <meta charset="utf-8">\n  <title>My Page</title>\n</head>\n<body>\n  <h1>Hello</h1>\n</body>\n</html>' },
+  { lang:"HTML", title:"Headings and paragraphs", desc:"Text blocks.", code:'<h1>Big title</h1>\n<h2>Smaller title</h2>\n<p>A paragraph of text.</p>\n<p>Another paragraph.</p>' },
+  { lang:"HTML", title:"Link", desc:"Clickable anchor.", code:'<a href="https://example.com">Visit example</a>' },
+  { lang:"HTML", title:"Image", desc:"Show a picture.", code:'<img src="photo.jpg" alt="A description" width="300">' },
+  { lang:"HTML", title:"Unordered list", desc:"Bullet list.", code:'<ul>\n  <li>Mango</li>\n  <li>Banana</li>\n  <li>Orange</li>\n</ul>' },
+  { lang:"HTML", title:"Form with input", desc:"Collect user data.", code:'<form>\n  <label>Name: <input type="text" name="name"></label>\n  <button type="submit">Send</button>\n</form>' },
+  { lang:"HTML", title:"Semantic layout", desc:"Meaningful tags for structure.", code:'<header>Site header</header>\n<nav>Menu</nav>\n<main>\n  <article>Main content</article>\n</main>\n<footer>Copyright</footer>' },
+
+  // ---- CSS ----
+  { lang:"CSS", title:"Colour and font", desc:"Basic styling.", code:'body {\n  background: #0b0f17;\n  color: #e7eefc;\n  font-family: system-ui, sans-serif;\n}' },
+  { lang:"CSS", title:"Centre a box", desc:"Flexbox centring.", code:'.box {\n  display: flex;\n  justify-content: center;\n  align-items: center;\n  height: 100vh;\n}' },
+  { lang:"CSS", title:"Card with shadow", desc:"Simple card styling.", code:'.card {\n  background: #131a26;\n  border-radius: 12px;\n  padding: 16px;\n  box-shadow: 0 8px 24px rgba(0,0,0,0.4);\n}' },
+  { lang:"CSS", title:"Grid layout", desc:"Auto-fit responsive grid.", code:'.grid {\n  display: grid;\n  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));\n  gap: 16px;\n}' },
+  { lang:"CSS", title:"Media query", desc:"Different styles for small screens.", code:'@media (max-width: 600px) {\n  .sidebar { display: none; }\n}' },
+  { lang:"CSS", title:"Hover effect with transition", desc:"Smooth interaction.", code:'.btn {\n  background: #1f6feb;\n  transition: transform 0.2s;\n}\n.btn:hover {\n  transform: scale(1.05);\n}' },
+
+  // ---- C ----
+  { lang:"C", title:"Hello, C", desc:"Minimal program.", code:'#include <stdio.h>\n\nint main() {\n    printf("Hello, world!\\n");\n    return 0;\n}' },
+  { lang:"C", title:"Read a number", desc:"Get input from the user.", code:'int n;\nprintf("Enter a number: ");\nscanf("%d", &n);\nprintf("You entered %d\\n", n);' },
+  { lang:"C", title:"For loop", desc:"Count 0 to 4.", code:'for (int i = 0; i < 5; i++) {\n    printf("%d\\n", i);\n}' },
+  { lang:"C", title:"Pointers", desc:"Address of and dereference.", code:'int x = 10;\nint *p = &x;\nprintf("%d\\n", *p);  // 10\n*p = 20;\nprintf("%d\\n", x);   // 20' },
+  { lang:"C", title:"Dynamic memory", desc:"Allocate and free.", code:'int *arr = malloc(10 * sizeof(int));\nif (arr == NULL) return 1;\narr[0] = 42;\nfree(arr);' },
+
+  // ---- C++ ----
+  { lang:"C++", title:"Hello, C++", desc:"Minimal program.", code:'#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << "Hello, world!" << endl;\n    return 0;\n}' },
+  { lang:"C++", title:"Vector", desc:"Grow-able array.", code:'#include <vector>\nvector<int> nums = {1, 2, 3};\nnums.push_back(4);\nfor (int n : nums) cout << n << " ";' },
+  { lang:"C++", title:"Class", desc:"Object-oriented basics.", code:'class Dog {\npublic:\n    string name;\n    Dog(string n) : name(n) {}\n    string bark() { return name + " says woof!"; }\n};' },
+  { lang:"C++", title:"Map", desc:"Key-value container.", code:'#include <map>\nmap<string, int> ages;\nages["Ama"] = 17;\ncout << ages["Ama"];' },
+
+  // ---- Java ----
+  { lang:"Java", title:"Hello, Java", desc:"Minimal class.", code:'public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello, world!");\n    }\n}' },
+  { lang:"Java", title:"ArrayList", desc:"Grow-able list.", code:'import java.util.ArrayList;\nArrayList<String> names = new ArrayList<>();\nnames.add("Ama");\nnames.add("Kofi");\nSystem.out.println(names.get(0));' },
+  { lang:"Java", title:"Class", desc:"Fields and methods.", code:'public class Dog {\n    private String name;\n    public Dog(String name) { this.name = name; }\n    public String bark() { return name + " says woof!"; }\n}' },
+
+  // ---- Bash ----
+  { lang:"Bash", title:"Hello, Bash", desc:"First script.", code:'#!/bin/bash\necho "Hello, world!"' },
+  { lang:"Bash", title:"Variables", desc:"Store values.", code:'name="Ama"\necho "Hello, $name"' },
+  { lang:"Bash", title:"Loop over files", desc:"Repeat for every file.", code:'for f in *.txt; do\n    echo "Processing $f"\ndone' },
+  { lang:"Bash", title:"Check if file exists", desc:"Conditional logic.", code:'if [ -f "config.txt" ]; then\n    echo "Found it"\nelse\n    echo "Missing"\nfi' },
+  { lang:"Bash", title:"Count lines in a file", desc:"Text processing with pipes.", code:'wc -l < data.txt' },
+
+  // ---- SQL ----
+  { lang:"SQL", title:"Select all rows", desc:"Basic query.", code:'SELECT * FROM users;' },
+  { lang:"SQL", title:"Filter with WHERE", desc:"Narrow the results.", code:'SELECT name, age\nFROM users\nWHERE age >= 18\nORDER BY age DESC;' },
+  { lang:"SQL", title:"Aggregate", desc:"Count, sum, average.", code:'SELECT department, COUNT(*) AS total, AVG(salary) AS avg_salary\nFROM employees\nGROUP BY department;' },
+  { lang:"SQL", title:"Join two tables", desc:"Combine related data.", code:'SELECT users.name, orders.total\nFROM users\nJOIN orders ON users.id = orders.user_id;' },
+  { lang:"SQL", title:"Insert and update", desc:"Change data.", code:'INSERT INTO users (name, age) VALUES (\'Ama\', 17);\nUPDATE users SET age = 18 WHERE name = \'Ama\';' },
+
+  // ---- Git ----
+  { lang:"Git", title:"Start a repository", desc:"First-time setup.", code:'git init\ngit add .\ngit commit -m "Initial commit"' },
+  { lang:"Git", title:"Check status", desc:"See what changed.", code:'git status\ngit diff' },
+  { lang:"Git", title:"Branch", desc:"Work on a feature safely.", code:'git checkout -b new-feature\n# make changes\ngit add .\ngit commit -m "Add feature"\ngit checkout main\ngit merge new-feature' },
+  { lang:"Git", title:"Push to GitHub", desc:"Share your work.", code:'git remote add origin https://github.com/you/repo.git\ngit push -u origin main' },
+  { lang:"Git", title:"Undo the last commit", desc:"Keep changes but uncommit.", code:'git reset --soft HEAD~1' },
+
+  // ---- Algorithms ----
+  { lang:"Algorithms", title:"Binary search (Python)", desc:"O(log n) search on sorted data.", code:'def binary_search(arr, target):\n    lo, hi = 0, len(arr) - 1\n    while lo <= hi:\n        mid = (lo + hi) // 2\n        if arr[mid] == target:\n            return mid\n        elif arr[mid] < target:\n            lo = mid + 1\n        else:\n            hi = mid - 1\n    return -1' },
+  { lang:"Algorithms", title:"Bubble sort (Python)", desc:"Simple (slow) sort.", code:'def bubble_sort(a):\n    n = len(a)\n    for i in range(n):\n        for j in range(n - i - 1):\n            if a[j] > a[j+1]:\n                a[j], a[j+1] = a[j+1], a[j]\n    return a' },
+  { lang:"Algorithms", title:"Quick sort (Python)", desc:"Divide and conquer.", code:'def quicksort(a):\n    if len(a) <= 1:\n        return a\n    pivot = a[len(a)//2]\n    left = [x for x in a if x < pivot]\n    mid = [x for x in a if x == pivot]\n    right = [x for x in a if x > pivot]\n    return quicksort(left) + mid + quicksort(right)' },
+  { lang:"Algorithms", title:"Breadth-first search", desc:"Graph traversal, level by level.", code:'from collections import deque\n\ndef bfs(graph, start):\n    visited = {start}\n    queue = deque([start])\n    while queue:\n        node = queue.popleft()\n        for nb in graph[node]:\n            if nb not in visited:\n                visited.add(nb)\n                queue.append(nb)\n    return visited' },
+
+  // ---- Web Dev ----
+  { lang:"Web Dev", title:"Minimal interactive page", desc:"HTML + CSS + JS in one file.", code:'<!DOCTYPE html>\n<html>\n<head>\n<style>\n  body { font-family: sans-serif; text-align: center; padding: 40px; }\n  #counter { font-size: 48px; margin: 20px; }\n  button { padding: 10px 20px; font-size: 16px; }\n</style>\n</head>\n<body>\n  <div id="counter">0</div>\n  <button onclick="increment()">Click</button>\n  <script>\n    let n = 0;\n    function increment() {\n      n++;\n      document.getElementById("counter").textContent = n;\n    }\n  <\/script>\n</body>\n</html>' },
+  { lang:"Web Dev", title:"Fetch and show data", desc:"Get JSON and render it. Requires an /api/users endpoint and a #list element.", code:'async function loadUsers() {\n  const response = await fetch("/api/users");\n  if (!response.ok) throw new Error("Could not load users");\n  const users = await response.json();\n  const list = document.querySelector("#list");\n  if (!list) throw new Error("Missing #list element");\n  list.replaceChildren(...users.map(function(user) {\n    const item = document.createElement("li");\n    item.textContent = user.name;\n    return item;\n  }));\n}' }
+];
+/* ============ SYSTEM PROMPT ============ */
+const CODE_PROMPT = `You are a patient, encouraging coding tutor for a complete beginner.
+
+The student is learning programming. Their focus language is shown in the context below.
+
+=== TEACHING CYCLE ===
+1. TEACH — Explain in 2-4 short paragraphs. Plain words. Real-world analogy.
+2. SHOW — Small complete code example. Explain each line.
+3. CHECK — One question or tiny exercise. Wait for the answer.
+4. Correct → next sub-point. Wrong → re-teach differently, ask again.
+5. After 3-4 sub-points: quick 3-question quiz.
+
+=== RULES ===
+- ALWAYS give runnable code with line-by-line explanation.
+- NEVER give more than 25 lines of code at once unless asked.
+- Use backticks for code. Plain text elsewhere.
+- End every reply with a question OR "Ready for the next part?".
+- Praise specifically ("you correctly used a list comprehension"), never generically.
+- Show errors and how to read them.
+- Explain WHY, not just what.
+- If beginner mode is ON: prefer very short explanations and skip edge cases.
+
+=== SAFETY ===
+- Only teach code that runs on the student's own machine or a sandbox.
+- Never help build malware, scrapers that violate ToS, or anything that attacks systems.
+
+=== PROGRESS REPORTING ===
+At the END of EVERY reply, append on its own line:
+<<PROGRESS:topic=SLUG;level=N;note=short note>>
+SLUG must be one of: python, javascript, html, css, c, cpp, java, go, rust, php, ruby, typescript, csharp, bash, sql, algorithms, webdev, git
+level 0-5. note under 8 words. Do NOT mention this line to the student.
+
+=== QUIZ ANSWER TRACKING ===
+When the student answers a check question, append on its own line:
+<<ANSWER:RIGHT>>
+or
+<<ANSWER:WRONG>>
+
+=== LESSON MODE ===
+If a specific lesson is active, focus ONLY on that lesson. Append <<LESSON_PASS>> on its own line after 2+ correct answers.`;
+
+const LEVEL_NAMES = ["Not started","Heard of it","Basic","Solid","Strong","Mastered"];
+const REVIEW_DAYS = [0, 1, 2, 4, 8, 21];
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/* ============ RANKS ============ */
+const RANKS = [
+  { xp: 0, emoji: '', title: 'Beginner' },
+  { xp: 150, title: 'Learner' },
+  { xp: 400, title: 'Coder' },
+  { xp: 900, title: 'Builder' },
+  { xp: 1800, title: 'Developer' },
+  { xp: 3200, title: 'Engineer' },
+  { xp: 5200, title: 'Architect' },
+  { xp: 8000, title: 'Expert' },
+  { xp: 12000, title: 'Master' }
+];
+function getRank(xp) { let r = RANKS[0]; for (const rank of RANKS) if (xp >= rank.xp) r = rank; return r; }
+function getNextRank(xp) { for (const rank of RANKS) if (xp < rank.xp) return rank; return null; }
+
+/* ============ SHARED STATE ============ */
+let notes    = JSON.parse(localStorage.getItem('notes') || '[]');
+let streak   = JSON.parse(localStorage.getItem('streak') || '{"current":0,"best":0,"days":{},"lastVisit":null}');
+let stats    = JSON.parse(localStorage.getItem('stats') || '{"totalMs":0,"sessions":0}');
+let totalXp  = parseInt(localStorage.getItem('totalXp') || '0', 10);
+let quizHistory = JSON.parse(localStorage.getItem('quizHistory') || '[]');
+let autoRead = localStorage.getItem('autoRead') === '1';
+let voiceOn  = localStorage.getItem('voiceOn') !== '0';
+let goalMin  = parseInt(localStorage.getItem('goalMin') || '30', 10);
+let focusLang = localStorage.getItem('code_focusLang') || 'python';
+let beginnerMode = localStorage.getItem('code_beginnerMode') !== '0';
+
+/* ============ CODE-SPECIFIC STATE ============ */
+let codeProgress = JSON.parse(localStorage.getItem('code_prog') || '{}');
+let codeCourseState = JSON.parse(localStorage.getItem('code_courseState') || '{}');
+let codeCurrentLesson = JSON.parse(localStorage.getItem('code_currentLesson') || 'null');
+let codeHistory = JSON.parse(localStorage.getItem('code_hist') || '[]');
+let codeAdaptive = JSON.parse(localStorage.getItem('code_adaptive') || '{"subjects":{}}');
+let savedCode = JSON.parse(localStorage.getItem('code_savedCode') || '{}');
+let currentMode = 'chat';
+let editorLang = localStorage.getItem('code_editorLang') || 'javascript';
+if (!Object.prototype.hasOwnProperty.call(STARTER, editorLang)) editorLang = 'javascript';
+let snippetFilter = { search:'', lang:'all' };
+let activeQuiz = null;
+let voices = [];
+let currentSpeech = null;
+let notesFilter = { search:'', tag:'all' };
+let sessionStartMs = Date.now();
+let sessionTimer = null;
+let lastTouchedSubject = null;
+let isOnline = navigator.onLine;
+let micRecognition = null;
+let micListening = false;
+
+/* ============ DOM REFS ============ */
+const chat = document.getElementById('chat');
+const input = document.getElementById('input');
+const sendBtn = document.getElementById('send');
+const btnMic = document.getElementById('btnMic');
+const settings = document.getElementById('settings');
+const progressPanel = document.getElementById('progressPanel');
+const notesPanel = document.getElementById('notesPanel');
+const statsPanel = document.getElementById('statsPanel');
+const coursesPanel = document.getElementById('coursesPanel');
+const lessonsPanel = document.getElementById('lessonsPanel');
+const backupPanel = document.getElementById('backupPanel');
+const quizSheet = document.getElementById('quizSheet');
+const statusDot = document.getElementById('statusDot');
+const statusTxt = document.getElementById('statusText');
+const streakNum = document.getElementById('streakNum');
+const sessionTimeEl = document.getElementById('sessionTime');
+const goalFill = document.getElementById('goalFill');
+const goalLbl = document.getElementById('goalLbl');
+const lessonBanner = document.getElementById('lessonBanner');
+const lbTitle = document.getElementById('lbTitle');
+const lbSub = document.getElementById('lbSub');
+const xpPill = document.getElementById('xpPill');
+const codeArea = document.getElementById('codeArea');
+const outputArea = document.getElementById('outputArea');
+const previewFrame = document.getElementById('previewFrame');
+const previewWrap = document.getElementById('previewWrap');
+const langSelect = document.getElementById('langSelect');
+const quizChat = document.getElementById('quizChat');
+
+/* ============ TOAST ============ */
+let toastTimer = null;
+function showToast(msg, kind) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + (kind || '');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.classList.remove('show'); }, 2600);
+}
+
+/* ============ DATE HELPERS ============ */
+function todayKey(d) { d = d || new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+function dayKeyOffset(offset) { const d = new Date(); d.setDate(d.getDate() + offset); return todayKey(d); }
+function fmtMinutes(ms) { const m = Math.floor(ms/60000); if (m < 60) return m + 'm'; const h = Math.floor(m/60); return h + 'h ' + (m%60) + 'm'; }
+function fmtClock(ms) { const s = Math.floor(ms/1000); return Math.floor(s/60) + ':' + String(s%60).padStart(2,'0'); }
+
+/* ============ STREAK + TIME ============ */
+function registerVisit() {
+  const today = todayKey();
+  const yesterday = dayKeyOffset(-1);
+  if (streak.lastVisit !== today) {
+    if (streak.lastVisit === yesterday) streak.current = (streak.current || 0) + 1;
+    else streak.current = 1;
+    streak.lastVisit = today;
+    if (!streak.days[today]) streak.days[today] = { ms:0 };
+    if (streak.current > (streak.best||0)) streak.best = streak.current;
+    saveStreak();
+    if (streak.current > 1) setTimeout(() => addSys(`Welcome back! ${streak.current} day streak.`, true), 500);
+  }
+}
+function saveStreak() { localStorage.setItem('streak', JSON.stringify(streak)); streakNum.textContent = streak.current || 0; }
+function addStudyTime(ms) {
+  const today = todayKey();
+  if (!streak.days[today]) streak.days[today] = { ms:0 };
+  streak.days[today].ms += ms;
+  stats.totalMs = (stats.totalMs || 0) + ms;
+  saveStreak();
+  localStorage.setItem('stats', JSON.stringify(stats));
+  updateTimerBar();
+}
+function updateTimerBar() {
+  const elapsed = Date.now() - sessionStartMs;
+  const todayMs = streak.days[todayKey()]?.ms || 0;
+  sessionTimeEl.textContent = fmtClock(elapsed);
+  const goalMs = goalMin * 60000;
+  goalFill.style.width = Math.min(100, Math.round((todayMs / goalMs) * 100)) + '%';
+  goalLbl.textContent = `${Math.floor(todayMs/60000)}/${goalMin}m`;
+  document.getElementById('timerBar').classList.toggle('done', todayMs >= goalMs);
+}
+function startSessionTimer() { sessionTimer = setInterval(() => addStudyTime(1000), 1000); }
+function endSession() { if (sessionTimer) clearInterval(sessionTimer); sessionTimer = null; }
+
+/* ============ XP ============ */
+function paintXpPill() {
+  const rank = getRank(totalXp);
+  xpPill.textContent = totalXp + ' XP';
+}
+function addXp(amount) {
+  const before = getRank(totalXp).title;
+  totalXp += amount;
+  localStorage.setItem('totalXp', String(totalXp));
+  paintXpPill();
+  const after = getRank(totalXp).title;
+  if (after !== before) addSys(`Rank up! You are now ${after}.`, true);
+}
+
+/* ============ MODE SWITCHING ============ */
+function switchMode(mode) {
+  currentMode = mode;
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+  document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + mode));
+  // Toggle chips visibility — only show in chat mode
+  document.getElementById('chips').style.display = mode === 'chat' ? 'flex' : 'none';
+  if (mode === 'editor') { codeArea.focus(); }
+  if (mode === 'snippets') { renderSnippets(); }
+}
+document.querySelectorAll('.mode-btn').forEach(b => {
+  b.onclick = () => switchMode(b.dataset.mode);
+});
+
+/* ============ SUBJECT STATE ============ */
+function getCourseState(slug) {
+  if (!codeCourseState[slug]) codeCourseState[slug] = { completedLessons: [] };
+  return codeCourseState[slug];
+}
+function saveCourseState() { localStorage.setItem('code_courseState', JSON.stringify(codeCourseState)); }
+function getSubjectAdaptive(slug) {
+  if (!codeAdaptive.subjects[slug]) codeAdaptive.subjects[slug] = { recentQuizzes:[], recentAnswers:[] };
+  return codeAdaptive.subjects[slug];
+}
+function saveAdaptive() { localStorage.setItem('code_adaptive', JSON.stringify(codeAdaptive)); }
+function computeMode(slug) {
+  const st = getSubjectAdaptive(slug);
+  const q = st.recentQuizzes.slice(-3);
+  const avg = q.length ? q.reduce((s,x) => s + x.pct, 0) / q.length : null;
+  if (avg !== null && avg < 50 && q.length >= 2) return 'struggling';
+  if (avg !== null && avg >= 85 && q.length >= 2) return 'cruising';
+  return 'normal';
+}
+
+/* ============ COURSE PROGRESS ============ */
+function getCourseProgress(slug) {
+  const course = CODE_LANGS.find(c => c.slug === slug);
+  if (!course) return { done:0, total:0 };
+  const st = getCourseState(slug);
+  const done = course.lessons.filter(l => st.completedLessons.includes(l.id)).length;
+  return { done, total: course.lessons.length };
+}
+function renderCourses() {
+  const body = document.getElementById('coursesBody');
+  body.innerHTML = '';
+  CODE_LANGS.forEach(course => {
+    const p = getCourseProgress(course.slug);
+    const complete = p.done >= p.total && p.total > 0;
+    const started = p.done > 0;
+    const pct = p.total ? Math.round((p.done / p.total) * 100) : 0;
+    const card = document.createElement('div');
+    card.className = 'course-card';
+    let statusClass, statusText;
+    if (complete) { statusClass='done'; statusText='Complete'; }
+    else if (started) { statusClass='progress'; statusText=p.done+'/'+p.total; }
+    else { statusClass='new'; statusText='NEW'; }
+    card.innerHTML = `<div class="course-status ${statusClass}">${statusText}</div>
+      <div class="course-head"><div class="course-icon ${complete?'done':''}">${course.label}</div>
+      <div class="course-info"><div class="course-title">${course.title}</div>
+      <div class="course-meta">${p.total} lessons - ${course.blurb}</div></div></div>
+      <div class="course-progress"><div class="course-progress-fill" style="width:${pct}%"></div></div>`;
+    card.onclick = () => { coursesPanel.classList.remove('show'); openLessons(course.slug); };
+    body.appendChild(card);
+  });
+}
+function openLessons(slug) {
+  const course = CODE_LANGS.find(c => c.slug === slug);
+  if (!course) return;
+  document.getElementById('lessonsTitle').textContent = course.title;
+  const p = getCourseProgress(slug);
+  document.getElementById('lessonsSub').textContent = `${p.done}/${p.total} lessons complete - ${course.blurb}`;
+  const body = document.getElementById('lessonsBody'); body.innerHTML = '';
+  const st = getCourseState(slug);
+  let currentLevel = null;
+  course.lessons.forEach((lesson, idx) => {
+    if (lesson.level !== currentLevel) {
+      currentLevel = lesson.level;
+      const hdr = document.createElement('div');
+      hdr.style.cssText = 'font-size:13px;font-weight:700;color:var(--accent);margin:14px 0 8px 4px;letter-spacing:.3px;';
+      hdr.textContent = currentLevel;
+      body.appendChild(hdr);
+    }
+    const isDone = st.completedLessons.includes(lesson.id);
+    const row = document.createElement('div');
+    row.className = 'lesson-row' + (isDone ? ' done' : '');
+    row.innerHTML = `<div class="lesson-num">${isDone ? 'OK' : (idx+1)}</div>
+      <div class="lesson-info"><div class="lesson-title">${lesson.title}</div>
+      <div class="lesson-brief">${lesson.brief}</div></div>`;
+    row.onclick = () => { lessonsPanel.classList.remove('show'); startLesson(slug, lesson.id); };
+    body.appendChild(row);
+  });
+  lessonsPanel.classList.add('show');
+}
+function startLesson(slug, lessonId) {
+  const course = CODE_LANGS.find(c => c.slug === slug);
+  if (!course) return;
+  const lesson = course.lessons.find(l => l.id === lessonId);
+  if (!lesson) return;
+  codeCurrentLesson = { subjectSlug: slug, lessonId, title: lesson.title, brief: lesson.brief, level: lesson.level };
+  localStorage.setItem('code_currentLesson', JSON.stringify(codeCurrentLesson));
+  getCourseState(slug).currentLesson = lessonId;
+  saveCourseState();
+  lastTouchedSubject = slug;
+  focusLang = slug;
+  localStorage.setItem('code_focusLang', slug);
+  paintLessonBanner();
+  switchMode('chat');
+  addSys(`Starting: ${lesson.title}`, true);
+  ask(`Start the lesson "${lesson.title}" in ${course.title} (${lesson.level} level). Objectives: ${lesson.brief}. Teach me from the beginning. When I have demonstrated understanding with at least 2 correct answers, append <<LESSON_PASS>>.`);
+}
+function paintLessonBanner() {
+  if (!codeCurrentLesson) { lessonBanner.classList.remove('show'); return; }
+  const course = CODE_LANGS.find(c => c.slug === codeCurrentLesson.subjectSlug);
+  if (!course) { codeCurrentLesson = null; localStorage.removeItem('code_currentLesson'); lessonBanner.classList.remove('show'); return; }
+  lbTitle.textContent = codeCurrentLesson.title;
+  lbSub.textContent = course.title + ' - ' + codeCurrentLesson.level + ' - ' + codeCurrentLesson.brief;
+  lessonBanner.classList.add('show');
+}
+function clearLesson() {
+  codeCurrentLesson = null;
+  localStorage.removeItem('code_currentLesson');
+  lessonBanner.classList.remove('show');
+}
+document.getElementById('lbExit').onclick = () => {
+  if (!confirm('Exit this lesson?')) return;
+  clearLesson();
+  addSys('Lesson exited.');
+};
+function markLessonComplete() {
+  if (!codeCurrentLesson) return;
+  const { subjectSlug, lessonId, title } = codeCurrentLesson;
+  const course = CODE_LANGS.find(c => c.slug === subjectSlug);
+  if (!course) return;
+  const st = getCourseState(subjectSlug);
+  if (!st.completedLessons.includes(lessonId)) st.completedLessons.push(lessonId);
+  saveCourseState();
+  updateTopic(subjectSlug, 3, `lesson: ${title}`);
+  addXp(30);
+  addSys(`Completed: ${title} (+30 XP)`, true);
+  const p = getCourseProgress(subjectSlug);
+  if (p.done >= p.total) {
+    addSys(`Finished the whole ${course.title} path! (+100 XP)`, true);
+    addXp(100);
+  }
+  clearLesson();
+}
+
+/* ============ PROGRESS ============ */
+function updateTopic(slug, level, note) {
+  const slugs = CODE_LANGS.map(c => c.slug);
+  if (!slug || !slugs.includes(slug)) return;
+  const old = codeProgress[slug] || { level:0, notes:[] };
+  const newLevel = Math.max(old.level || 0, level);
+  const now = Date.now();
+  codeProgress[slug] = {
+    level: newLevel,
+    lastSeen: now,
+    nextReview: now + (REVIEW_DAYS[newLevel] || 21) * DAY_MS,
+    notes: [ ...(old.notes||[]), { t: now, n: note||"" } ].slice(-10)
+  };
+  localStorage.setItem('code_prog', JSON.stringify(codeProgress));
+}
+function extractProgress(text) {
+  const m = text.match(/<<PROGRESS:([^>]+)>>/);
+  const lessonPass = /<<LESSON_PASS>>/.test(text);
+  const answerRight = /<<ANSWER:RIGHT>>/.test(text);
+  const answerWrong = /<<ANSWER:WRONG>>/.test(text);
+  const clean = text
+    .replace(/<<PROGRESS:[^>]+>>/g, '')
+    .replace(/<<LESSON_PASS>>/g, '')
+    .replace(/<<ANSWER:RIGHT>>/g, '')
+    .replace(/<<ANSWER:WRONG>>/g, '')
+    .trim();
+  let meta = null;
+  if (m) {
+    meta = {};
+    m[1].split(';').forEach(p => { const [k, ...rest] = p.split('='); if (k && rest.length) meta[k.trim()] = rest.join('=').trim(); });
+  }
+  return { clean, meta, lessonPass, answerRight, answerWrong };
+}
+function renderProgress() {
+  const body = document.getElementById('progressBody');
+  const entries = Object.entries(codeProgress);
+  if (!entries.length) { body.innerHTML = '<div class="empty-state">No progress yet. Pick a language from Lesson Paths.</div>'; return; }
+  const totalLevel = entries.reduce((s,[_,v]) => s + (v.level||0), 0);
+  const overall = Math.round((totalLevel / (CODE_LANGS.length * 5)) * 100);
+  let html = `<div class="prog-overall"><div class="prog-ring-wrap"><div class="prog-ring" style="--p:${overall}%"><span>${overall}%</span></div></div><div class="prog-meta"><strong>${entries.length} language${entries.length>1?'s':''} studied</strong><small>Overall mastery</small></div></div>`;
+  entries.sort((a,b) => (b[1].lastSeen||0) - (a[1].lastSeen||0));
+  entries.forEach(([slug, v]) => {
+    const lv = v.level || 0;
+    const course = CODE_LANGS.find(s => s.slug === slug);
+    const label = course ? course.title : slug;
+    html += `<div class="topic-row">
+      <div class="topic-head"><div class="topic-name">${label}</div><div class="topic-level lv${lv}">${LEVEL_NAMES[lv]}</div></div>
+      <div class="level-bar"><div class="level-fill" style="width:${(lv/5)*100}%"></div></div>
+    </div>`;
+  });
+  body.innerHTML = html;
+}
+
+/* ============ STATS ============ */
+function renderStats() {
+  const body = document.getElementById('statsBody');
+  const todayMs = streak.days[todayKey()]?.ms || 0;
+  const goalMs = goalMin * 60000;
+  let weekHtml = '<div class="week-strip">';
+  const dayNames = ['S','M','T','W','T','F','S'];
+  for (let i = 6; i >= 0; i--) {
+    const key = dayKeyOffset(-i);
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const hit = (streak.days[key]?.ms || 0) > 0;
+    const isToday = i === 0;
+    weekHtml += `<div class="day-cell ${hit?'hit':''} ${isToday?'today':''}"><div class="lbl">${dayNames[d.getDay()]}</div><div>${hit ? 'X' : '.'}</div></div>`;
+  }
+  weekHtml += '</div>';
+  const days = [];
+  for (let i = 13; i >= 0; i--) { const key = dayKeyOffset(-i); days.push({ key, ms: streak.days[key]?.ms || 0, isToday: i === 0 }); }
+  const maxMs = Math.max(...days.map(d => d.ms), goalMs);
+  let chartHtml = '<div class="chart-labels">';
+  days.forEach((d, i) => { chartHtml += `<span>${i % 2 === 0 ? new Date(d.key).getDate() : ''}</span>`; });
+  chartHtml += '</div><div class="chart">';
+  days.forEach(d => {
+    const h = Math.max(3, Math.round((d.ms / maxMs) * 70));
+    chartHtml += `<div class="bar ${d.isToday?'today':''}" style="height:${h}px"></div>`;
+  });
+  chartHtml += '</div>';
+  let lessonsDone = 0, lessonsTotal = 0;
+  CODE_LANGS.forEach(s => { const p = getCourseProgress(s.slug); lessonsDone += p.done; lessonsTotal += p.total; });
+  const rank = getRank(totalXp);
+  const next = getNextRank(totalXp);
+  const range = next ? next.xp - rank.xp : 1;
+  const pct = next ? Math.min(100, Math.round(((totalXp - rank.xp) / range) * 100)) : 100;
+  const rankHtml = `
+    <div class="rank-hero">
+      <div class="rk-title">${rank.title}</div>
+      <div class="rk-xp">${totalXp} XP total</div>
+      ${next ? `<div class="rk-bar"><div class="rk-fill" style="width:${pct}%"></div></div><div class="rk-next">${next.xp - totalXp} XP to ${next.title}</div>` : `<div class="rk-next">Max rank achieved!</div>`}
+    </div>`;
+  body.innerHTML = `
+    <div class="stat-hero"><div class="num">${streak.current || 0}</div><div class="lbl">day streak</div><div class="best">Best: <b>${streak.best || 0} days</b></div></div>
+    ${weekHtml}
+    ${rankHtml}
+    <div class="stats-grid">
+      <div class="stat-card"><div class="v">${fmtMinutes(stats.totalMs || 0)}</div><div class="k">Total time</div></div>
+      <div class="stat-card"><div class="v">${fmtMinutes(todayMs)}</div><div class="k">Today</div></div>
+      <div class="stat-card"><div class="v">${lessonsDone}/${lessonsTotal}</div><div class="k">Lessons done</div></div>
+      <div class="stat-card"><div class="v">${quizHistory.length}</div><div class="k">Quizzes taken</div></div>
+    </div>
+    <h3 style="font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--dim);margin:0 0 8px;font-weight:600;">Last 14 days</h3>
+    ${chartHtml}`;
+}
+
+/* ============ NOTES ============ */
+function saveNote(text, topicSlug, level) {
+  notes.unshift({ id: 'n' + Date.now() + Math.random().toString(36).slice(2,6), text: text.trim(), topic: topicSlug || null, level: level || null, savedAt: Date.now() });
+  localStorage.setItem('notes', JSON.stringify(notes));
+  updateNotesBadge();
+  addSys('Saved to notes');
+}
+function updateNotesBadge() {
+  // no badge element in this header, skip
+}
+function renderNotes() {
+  const body = document.getElementById('notesBody');
+  const tagBox = document.getElementById('tagFilter');
+  const countBox = document.getElementById('notesCount');
+  const tagCounts = {};
+  notes.forEach(n => { const t = n.topic || 'uncategorised'; tagCounts[t] = (tagCounts[t]||0)+1; });
+  tagBox.innerHTML = '';
+  const allChip = document.createElement('button');
+  allChip.className = 'filter-chip' + (notesFilter.tag === 'all' ? ' active' : '');
+  allChip.textContent = `All (${notes.length})`;
+  allChip.onclick = () => { notesFilter.tag = 'all'; renderNotes(); };
+  tagBox.appendChild(allChip);
+  Object.keys(tagCounts).sort().forEach(t => {
+    const c = document.createElement('button');
+    c.className = 'filter-chip' + (notesFilter.tag === t ? ' active' : '');
+    c.textContent = `${t.replace(/-/g,' ')} (${tagCounts[t]})`;
+    c.onclick = () => { notesFilter.tag = t; renderNotes(); };
+    tagBox.appendChild(c);
+  });
+  const q = notesFilter.search.toLowerCase().trim();
+  const filtered = notes.filter(n => {
+    if (notesFilter.tag !== 'all' && (n.topic || 'uncategorised') !== notesFilter.tag) return false;
+    if (q && !n.text.toLowerCase().includes(q)) return false;
+    return true;
+  });
+  countBox.textContent = `${filtered.length} of ${notes.length} note${notes.length===1?'':'s'}`;
+  if (!notes.length) { body.innerHTML = '<div class="empty-state">No notes yet. Tap Save under any tutor reply.</div>'; return; }
+  if (!filtered.length) { body.innerHTML = '<div class="empty-state">No notes match.</div>'; return; }
+  body.innerHTML = '';
+  filtered.forEach(n => {
+    const card = document.createElement('div'); card.className = 'note-card';
+    const meta = document.createElement('div'); meta.className = 'note-meta';
+    const tag = document.createElement('div'); tag.className = 'note-tag';
+    tag.textContent = (n.topic || 'general').replace(/-/g,' ');
+    const date = document.createElement('div'); date.className = 'note-date';
+    date.textContent = new Date(n.savedAt).toLocaleString();
+    meta.appendChild(tag); meta.appendChild(date);
+    const bodyEl = document.createElement('div'); bodyEl.className = 'note-body collapsed';
+    bodyEl.innerHTML = formatText(n.text);
+    const actions = document.createElement('div'); actions.className = 'note-actions';
+    const expandBtn = document.createElement('button'); expandBtn.className = 'act-btn'; expandBtn.textContent = 'Expand';
+    expandBtn.onclick = () => { const c = bodyEl.classList.toggle('collapsed'); bodyEl.classList.toggle('expanded', !c); expandBtn.textContent = c ? 'Expand' : 'Collapse'; };
+    const copyBtn = document.createElement('button'); copyBtn.className = 'act-btn'; copyBtn.textContent = 'Copy';
+    copyBtn.onclick = async () => { try { await navigator.clipboard.writeText(n.text); copyBtn.textContent = 'Copied'; setTimeout(()=>copyBtn.textContent='Copy',1200);} catch(e){} };
+    const delBtn = document.createElement('button'); delBtn.className = 'act-btn'; delBtn.textContent = 'Delete'; delBtn.style.color = '#ff7b72';
+    delBtn.onclick = () => { if (!confirm('Delete this note?')) return; notes = notes.filter(x => x.id !== n.id); localStorage.setItem('notes', JSON.stringify(notes)); renderNotes(); };
+    actions.appendChild(expandBtn); actions.appendChild(copyBtn); actions.appendChild(delBtn);
+    card.appendChild(meta); card.appendChild(bodyEl); card.appendChild(actions);
+    body.appendChild(card);
+  });
+}
+
+/* ============ SPEECH ============ */
+function loadVoices() {
+  if (!('speechSynthesis' in window) || typeof SpeechSynthesisUtterance === 'undefined') {
+    document.getElementById('voice').disabled = true;
+    document.getElementById('testVoice').disabled = true;
+    return;
+  }
+  voices = speechSynthesis.getVoices();
+  const sel = document.getElementById('voice');
+  sel.innerHTML = '';
+  const en = voices.filter(v => v.lang && v.lang.toLowerCase().startsWith('en'));
+  const list = en.length ? en : voices;
+  list.forEach(v => { const o = document.createElement('option'); o.value = v.name; o.textContent = v.name + ' (' + v.lang + ')'; sel.appendChild(o); });
+  const saved = localStorage.getItem('voiceName');
+  if (saved && list.some(v => v.name === saved)) sel.value = saved;
+}
+if ('speechSynthesis' in window) speechSynthesis.onvoiceschanged = loadVoices;
+function speak(text, el) {
+  if (!('speechSynthesis' in window) || typeof SpeechSynthesisUtterance === 'undefined') {
+    showToast('Read aloud is not supported in this browser.', 'err');
+    return;
+  }
+  const clean = text.replace(/`{1,3}/g,'').replace(/\*\*/g,'').replace(/[#>*_]/g,'').replace(/\[(.*?)\]\(.*?\)/g,'$1').replace(/<<(?:PROGRESS:[^>]+|LESSON_PASS|ANSWER:(?:RIGHT|WRONG))>>/g,'').trim();
+  if (!clean) return;
+  try {
+    stopSpeaking();
+    const utterance = new SpeechSynthesisUtterance(clean);
+    const name = localStorage.getItem('voiceName');
+    const selectedVoice = voices.find(voice => voice.name === name);
+    if (selectedVoice) utterance.voice = selectedVoice;
+    utterance.rate = parseFloat(localStorage.getItem('rate') || '1');
+    utterance.lang = (selectedVoice && selectedVoice.lang) || 'en-US';
+    const button = el ? el.querySelector('.read-btn') : null;
+    currentSpeech = { utterance, button, label: button ? button.textContent : '' };
+    if (button) { button.classList.add('speaking'); button.textContent = '⏹ Stop'; }
+    utterance.onend = () => { if (currentSpeech && currentSpeech.utterance === utterance) resetSpeech(); };
+    utterance.onerror = event => {
+      if (!currentSpeech || currentSpeech.utterance !== utterance) return;
+      resetSpeech();
+      if (event.error === 'canceled' || event.error === 'interrupted') return;
+      showToast(event.error === 'not-allowed'
+        ? 'Speech playback was blocked. Tap Read aloud on the reply or Test voice in Settings.'
+        : 'Unable to read aloud. Try another voice in Settings and check your device audio.', 'err');
+    };
+    if (speechSynthesis.paused) speechSynthesis.resume();
+    speechSynthesis.speak(utterance);
+  } catch (error) {
+    resetSpeech();
+    showToast('Unable to read aloud. Try Test voice in Settings.', 'err');
+  }
+}
+function resetSpeech() {
+  if (currentSpeech && currentSpeech.button) {
+    currentSpeech.button.classList.remove('speaking');
+    currentSpeech.button.textContent = currentSpeech.label;
+  }
+  currentSpeech = null;
+}
+function stopSpeaking() {
+  resetSpeech();
+  if ('speechSynthesis' in window) speechSynthesis.cancel();
+}
+
+/* ============ VOICE INPUT ============ */
+function initVoiceInput() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { btnMic.onclick = () => showToast('Voice input not supported.', 'err'); return; }
+  micRecognition = new SR();
+  micRecognition.continuous = false;
+  micRecognition.interimResults = true;
+  micRecognition.lang = 'en-US';
+  micRecognition.onstart = () => { micListening = true; btnMic.classList.add('listening'); };
+  micRecognition.onend = () => { micListening = false; btnMic.classList.remove('listening'); };
+  micRecognition.onerror = (e) => {
+    micListening = false; btnMic.classList.remove('listening');
+    if (e.error === 'not-allowed') showToast('Microphone permission denied.', 'err');
+    else if (e.error === 'no-speech') showToast('No speech detected. Try again.', 'err');
+  };
+  micRecognition.onresult = (e) => {
+    let interim = '', final = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const t = e.results[i][0].transcript;
+      if (e.results[i].isFinal) final += t;
+      else interim += t;
+    }
+    if (interim) input.value = interim;
+    if (final) { input.value = final; input.style.height = '46px'; input.style.height = Math.min(input.scrollHeight, 140) + 'px'; }
+  };
+  btnMic.onclick = () => {
+    if (micListening) { micRecognition.stop(); return; }
+    try { micRecognition.start(); } catch (e) { showToast('Mic error: ' + e.message, 'err'); }
+  };
+}
+initVoiceInput();
+
+/* ============ OFFLINE ============ */
+window.addEventListener('online', () => { isOnline = true; showToast('Back online', 'ok'); addSys('Connection restored.'); });
+window.addEventListener('offline', () => { isOnline = false; showToast('Offline', 'err'); addSys('You are offline. The tutor needs internet.'); });
+
+/* ============ RENDERING ============ */
+function escapeHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function formatText(t) {
+  let s = escapeHtml(t);
+  s = s.replace(/```([\s\S]*?)```/g, (_, c) => '<pre><code>' + c.trim() + '</code></pre>');
+  s = s.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+  s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  return s;
+}
+function addMsg(role, text, opts = {}) {
+  const wrap = document.createElement('div');
+  wrap.className = 'msg ' + role;
+  const av = document.createElement('div'); av.className = 'avatar';
+  av.textContent = role === 'user' ? 'YOU' : 'AI';
+  const bubble = document.createElement('div'); bubble.className = 'bubble';
+  bubble.innerHTML = formatText(text);
+  wrap.appendChild(av); wrap.appendChild(bubble);
+  chat.appendChild(wrap); chat.scrollTop = chat.scrollHeight;
+  if (role === 'bot' && text && !opts.noSpeak) {
+    if (opts.lessonPass) {
+      const tag = document.createElement('span'); tag.className = 'lesson-tag'; tag.textContent = 'Lesson passed';
+      bubble.appendChild(tag);
+    }
+    const actions = document.createElement('div'); actions.className = 'msg-actions';
+    const speakBtn = document.createElement('button'); speakBtn.className = 'act-btn read-btn'; speakBtn.textContent = 'Read aloud';
+    speakBtn.onclick = () => { if (speakBtn.classList.contains('speaking')) stopSpeaking(); else speak(text, bubble); };
+    const saveBtn = document.createElement('button'); saveBtn.className = 'act-btn'; saveBtn.textContent = 'Save';
+    saveBtn.onclick = () => { saveNote(text, opts.topic || null, opts.level != null ? opts.level : null); saveBtn.textContent = 'Saved'; saveBtn.classList.add('save-active'); bubble.classList.add('saved'); };
+    const copyBtn = document.createElement('button'); copyBtn.className = 'act-btn'; copyBtn.textContent = 'Copy';
+    copyBtn.onclick = async () => { try { await navigator.clipboard.writeText(text); copyBtn.textContent = 'Copied'; setTimeout(()=>copyBtn.textContent='Copy',1200);} catch(e){} };
+    const codeBtn = document.createElement('button'); codeBtn.className = 'act-btn'; codeBtn.textContent = 'Send to editor';
+    codeBtn.onclick = () => {
+      const m = text.match(/```(?:\w+)?\n([\s\S]*?)```/);
+      if (m) {
+        codeArea.value = m[1];
+        saveEditorCode();
+        switchMode('editor');
+        showToast('Code loaded into editor', 'ok');
+      } else showToast('No code block found', 'err');
+    };
+    actions.appendChild(speakBtn); actions.appendChild(saveBtn); actions.appendChild(copyBtn); actions.appendChild(codeBtn);
+    bubble.appendChild(actions);
+  }
+  return bubble;
+}
+function addSys(text, celebrate) {
+  const d = document.createElement('div');
+  d.className = 'sys-msg' + (celebrate ? ' celebrate' : '');
+  d.textContent = text;
+  chat.appendChild(d); chat.scrollTop = chat.scrollHeight;
+}
+function addTyping() {
+  const wrap = document.createElement('div'); wrap.className = 'msg bot';
+  wrap.innerHTML = `<div class="avatar">AI</div><div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div>`;
+  chat.appendChild(wrap); chat.scrollTop = chat.scrollHeight;
+  return wrap;
+}
+
+/* ============ ASK (CHAT) ============ */
+let chatLoading = false;
+async function ask(userText) {
+  if (chatLoading || quizLoading) { showToast('Wait for the current request to finish.', 'err'); return; }
+  stopSpeaking();
+  if (!isOnline) { addSys('You are offline. The tutor needs internet to answer.'); return; }
+  codeHistory.push({ role:'user', content:userText });
+  addMsg('user', userText);
+  localStorage.setItem('code_hist', JSON.stringify(codeHistory.slice(-40)));
+  const typing = addTyping();
+  chatLoading = true;
+  sendBtn.disabled = true;
+  try {
+    const key = TutorAI.getActiveKey();
+    const model = TutorAI.getActiveModel();
+    if (!key) { typing.remove(); addSys('Set your ' + TutorAI.getProviderName() + ' API key in Settings first.'); openSettings(); return; }
+    let sys = CODE_PROMPT;
+    sys += `\n\n=== STUDENT CONTEXT ===\nFocus language: ${focusLang}\nBeginner mode: ${beginnerMode ? 'ON' : 'off'}`;
+    if (codeCurrentLesson) {
+      const course = CODE_LANGS.find(c => c.slug === codeCurrentLesson.subjectSlug);
+      sys += `\n\n=== ACTIVE LESSON ===\nLanguage: ${course ? course.title : codeCurrentLesson.subjectSlug}\nLesson: ${codeCurrentLesson.title}\nLevel: ${codeCurrentLesson.level}\nObjectives: ${codeCurrentLesson.brief}\nFocus ONLY on this lesson. Append <<LESSON_PASS>> after 2+ correct answers.`;
+    }
+    const res = await fetch(TutorAI.getActiveUrl(), {
+      method:'POST',
+      signal: AbortSignal.timeout(30000),
+      headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer ' + key },
+      body: JSON.stringify({
+        model,
+        messages: [{ role:'system', content:sys }, ...codeHistory],
+        temperature: 0.6,
+        max_tokens: 1200
+      })
+    });
+    if (!res.ok) throw new Error('Service request failed (HTTP ' + res.status + '). Check Settings or try again.');
+    const data = await res.json();
+    typing.remove();
+    if (data?.error) { addSys('Error: ' + (data.error.message || 'API error')); setStatus('Error','bad'); return; }
+    const raw = data?.choices?.[0]?.message?.content;
+    if (typeof raw !== 'string' || !raw.trim()) throw new Error('The tutor returned an empty or invalid reply. Try again.');
+    const { clean, meta, lessonPass, answerRight, answerWrong } = extractProgress(raw);
+    codeHistory.push({ role:'assistant', content:clean });
+    localStorage.setItem('code_hist', JSON.stringify(codeHistory.slice(-40)));
+    const bubble = addMsg('bot', clean, {
+      topic: meta ? meta.topic : (codeCurrentLesson?.subjectSlug || lastTouchedSubject || focusLang),
+      level: meta ? parseInt(meta.level||'0',10) : null,
+      lessonPass
+    });
+    if (meta && meta.topic) {
+      updateTopic(meta.topic, parseInt(meta.level || '0', 10), meta.note || '');
+    }
+    const topicForAdaptive = (meta && meta.topic) || codeCurrentLesson?.subjectSlug || lastTouchedSubject || focusLang;
+    if (topicForAdaptive && (answerRight || answerWrong)) {
+      const st = getSubjectAdaptive(topicForAdaptive);
+      st.recentAnswers.push(!!answerRight);
+      if (st.recentAnswers.length > 10) st.recentAnswers = st.recentAnswers.slice(-10);
+      saveAdaptive();
+    }
+    setStatus('Ready','ok');
+    if (autoRead && voiceOn) speak(clean, bubble);
+    if (lessonPass && codeCurrentLesson) setTimeout(() => markLessonComplete(), 500);
+  } catch (e) {
+    typing.remove();
+    addSys('Network error: ' + e.message);
+    setStatus('Offline','bad');
+  } finally {
+    chatLoading = false;
+    sendBtn.disabled = false; input.focus();
+  }
+}
+function setStatus(text, kind) { statusTxt.textContent = text; statusDot.className = 'dot ' + (kind || ''); }
+
+/* ============ EDITOR — save code per language ============ */
+function saveEditorCode() {
+  savedCode[editorLang] = codeArea.value;
+  localStorage.setItem('code_savedCode', JSON.stringify(savedCode));
+  localStorage.setItem('code_editorLang', editorLang);
+}
+function loadEditorCode(lang) {
+  editorLang = lang;
+  codeArea.value = savedCode[lang] ?? STARTER[lang] ?? '';
+}
+langSelect.value = editorLang;
+loadEditorCode(editorLang);
+langSelect.onchange = () => {
+  saveEditorCode();
+  loadEditorCode(langSelect.value);
+  saveEditorCode();
+  outputArea.textContent = 'Ready.';
+  previewWrap.style.display = 'none';
+};
+codeArea.addEventListener('input', () => { saveEditorCode(); });
+
+/* ============ EDITOR — Run ============ */
+document.getElementById('btnClearCode').onclick = () => {
+  if (!confirm('Clear the code area?')) return;
+  codeArea.value = '';
+  saveEditorCode();
+  outputArea.textContent = 'Cleared.';
+  previewWrap.style.display = 'none';
+};
+document.getElementById('btnExplainCode').onclick = () => {
+  const code = codeArea.value.trim();
+  if (!code) { showToast('Nothing to explain', 'err'); return; }
+  switchMode('chat');
+  ask('Explain this ' + editorLang + ' code line by line:\n\n```\n' + code + '\n```');
+};
+
+document.getElementById('btnRun').onclick = async () => {
+  const code = codeArea.value;
+  if (!code.trim()) { showToast('Write some code first', 'err'); return; }
+  outputArea.textContent = 'Running...';
+  previewWrap.style.display = 'none';
+
+  // HTML: run locally in an iframe
+  if (editorLang === 'html') {
+    previewFrame.srcdoc = code;
+    previewWrap.style.display = 'block';
+    outputArea.innerHTML = '<span class="ok">HTML rendered in preview below.</span>';
+    return;
+  }
+  // JavaScript: run locally in the page
+  if (editorLang === 'javascript') {
+    const logs = [];
+    const origLog = console.log;
+    const origErr = console.error;
+    console.log = (...a) => { logs.push(a.map(x => typeof x === 'object' ? JSON.stringify(x) : String(x)).join(' ')); origLog(...a); };
+    console.error = (...a) => { logs.push('[err] ' + a.map(x => String(x)).join(' ')); origErr(...a); };
+    try {
+      // eslint-disable-next-line no-new-func
+      const fn = new Function(code);
+      const result = fn();
+      if (result !== undefined) logs.push('=> ' + (typeof result === 'object' ? JSON.stringify(result) : String(result)));
+      outputArea.innerHTML = logs.length ? escapeHtml(logs.join('\n')) : '<span class="ok">(no output)</span>';
+    } catch (err) {
+      outputArea.innerHTML = '<span class="err">' + escapeHtml(err.name + ': ' + err.message) + '</span>';
+    } finally {
+      console.log = origLog;
+      console.error = origErr;
+    }
+    return;
+  }
+
+  // Everything else: send to Piston
+  const cfg = PISTON_LANGS[editorLang];
+  if (!cfg) { outputArea.innerHTML = '<span class="err">Language not supported for remote run.</span>'; return; }
+  try {
+    const res = await fetch(PISTON_URL, {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({
+        language: cfg.language,
+        version: cfg.version,
+        files: [{ name: 'main', content: code }],
+        stdin: '',
+        compile_timeout: 10000,
+        run_timeout: 5000
+      })
+    });
+    if (!res.ok) throw new Error('Service request failed (HTTP ' + res.status + '). Check Settings or try again.');
+    const data = await res.json();
+    if (data.message) { outputArea.innerHTML = '<span class="err">' + escapeHtml(data.message) + '</span>'; return; }
+    const compileErr = data.compile && data.compile.stderr ? data.compile.stderr : '';
+    const runOut = data.run && data.run.stdout ? data.run.stdout : '';
+    const runErr = data.run && data.run.stderr ? data.run.stderr : '';
+    let html = '';
+    if (compileErr) html += '<span class="err">Compile error:\n' + escapeHtml(compileErr) + '</span>\n\n';
+    if (runOut) html += escapeHtml(runOut);
+    if (runErr) html += '\n<span class="err">' + escapeHtml(runErr) + '</span>';
+    if (!html) html = '<span class="ok">(no output)</span>';
+    outputArea.innerHTML = html;
+  } catch (err) {
+    outputArea.innerHTML = '<span class="err">Network error: ' + escapeHtml(err.message) + '</span>';
+  }
+};
+
+/* ============ SNIPPETS ============ */
+function getAllSnippetLangs() {
+  const set = new Set();
+  SNIPPETS.forEach(s => set.add(s.lang));
+  return ['all', ...Array.from(set).sort()];
+}
+function renderSnippets() {
+  const filterBox = document.getElementById('snippetsFilter');
+  filterBox.innerHTML = '';
+  const langs = getAllSnippetLangs();
+  langs.forEach(l => {
+    const b = document.createElement('button');
+    b.className = 'filter-chip' + (snippetFilter.lang === l ? ' active' : '');
+    b.textContent = l === 'all' ? 'All' : l;
+    b.onclick = () => { snippetFilter.lang = l; renderSnippets(); };
+    filterBox.appendChild(b);
+  });
+  const body = document.getElementById('snippetsBody');
+  body.innerHTML = '';
+  const q = snippetFilter.search.toLowerCase().trim();
+  const filtered = SNIPPETS.filter(s => {
+    if (snippetFilter.lang !== 'all' && s.lang !== snippetFilter.lang) return false;
+    if (q) {
+      const hay = (s.title + ' ' + s.desc + ' ' + s.code).toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+  if (!filtered.length) { body.innerHTML = '<div class="empty-state">No snippets match.</div>'; return; }
+  filtered.forEach(s => {
+    const card = document.createElement('div');
+    card.className = 'snippet-card';
+    card.innerHTML = `<div class="snippet-title">${escapeHtml(s.title)}</div>
+      <div class="snippet-desc">${escapeHtml(s.lang)} - ${escapeHtml(s.desc)}</div>
+      <div class="snippet-code">${escapeHtml(s.code)}</div>`;
+    const actions = document.createElement('div'); actions.className = 'snippet-actions';
+    const copyBtn = document.createElement('button'); copyBtn.className = 'act-btn'; copyBtn.textContent = 'Copy';
+    copyBtn.onclick = async () => { try { await navigator.clipboard.writeText(s.code); copyBtn.textContent = 'Copied'; setTimeout(()=>copyBtn.textContent='Copy',1200); } catch(e){ showToast('Copy failed','err'); } };
+    const editorBtn = document.createElement('button'); editorBtn.className = 'act-btn'; editorBtn.textContent = 'Open in editor';
+    editorBtn.onclick = () => {
+      const snippetLanguages = { Python:'python', JavaScript:'javascript', HTML:'html', CSS:'html', C:'c', 'C++':'cpp', Java:'java', Bash:'bash', SQL:'sql', Algorithms:'python', Git:'bash' };
+      const targetLanguage = snippetLanguages[s.lang] || (s.code.trim().startsWith('<') ? 'html' : 'javascript');
+      saveEditorCode();
+      loadEditorCode(targetLanguage);
+      langSelect.value = targetLanguage;
+      codeArea.value = s.code;
+      if (s.lang === 'CSS') codeArea.value = '<!DOCTYPE html><html><head><style>' + s.code + '</style></head><body><h1>CSS preview</h1><p>Edit this HTML to match your selectors.</p></body></html>';
+      saveEditorCode();
+      outputArea.textContent = 'Ready.';
+      previewWrap.style.display = 'none';
+      switchMode('editor');
+      showToast('Loaded into editor', 'ok');
+    };
+    const explainBtn = document.createElement('button'); explainBtn.className = 'act-btn'; explainBtn.textContent = 'Explain';
+    explainBtn.onclick = () => {
+      switchMode('chat');
+      ask('Explain this code in simple words:\n\n```\n' + s.code + '\n```');
+    };
+    actions.appendChild(copyBtn); actions.appendChild(editorBtn); actions.appendChild(explainBtn);
+    card.appendChild(actions);
+    body.appendChild(card);
+  });
+}
+document.getElementById('snippetSearch').addEventListener('input', (e) => {
+  snippetFilter.search = e.target.value;
+  renderSnippets();
+});
+
+/* ============ QUIZ ============ */
+let quizLoading = false;
+function validQuiz(quiz) {
+  return quiz && Array.isArray(quiz.questions) && quiz.questions.length > 0 && quiz.questions.length <= 10 &&
+    quiz.questions.every(question => question && typeof question.q === 'string' && question.q.trim() &&
+      Array.isArray(question.choices) && question.choices.length === 4 &&
+      question.choices.every(choice => typeof choice === 'string' && choice.trim()) &&
+      Number.isInteger(question.answer) && question.answer >= 0 && question.answer < 4 &&
+      (question.explain === undefined || typeof question.explain === 'string'));
+}
+function startPracticeQuiz(course) {
+  const questions = CODE_QUIZZES[course.slug];
+  const quiz = { topic: course.slug, title: course.title + ' Practice Quiz', questions };
+  if (!validQuiz(quiz)) {
+    addSys('The built-in quiz could not load. Reload the page or choose another topic with New Quiz.');
+    return;
+  }
+  renderQuizInPanel(quiz);
+}
+function openQuizSheet() {
+  if (quizLoading) return;
+  const grid = document.getElementById('quizTopicGrid');
+  grid.innerHTML = '';
+  const surprise = document.createElement('button');
+  surprise.className = 'quiz-topic-btn special';
+  surprise.innerHTML = `<div class="qti">RND</div><div class="qtl">Surprise me - random language</div>`;
+  surprise.onclick = () => { const r = CODE_LANGS[Math.floor(Math.random() * CODE_LANGS.length)]; startQuiz(r.slug); };
+  grid.appendChild(surprise);
+  CODE_LANGS.forEach(s => {
+    const btn = document.createElement('button');
+    btn.className = 'quiz-topic-btn';
+    btn.innerHTML = `<div class="qti">${s.label}</div><div class="qtl">${s.title}</div>`;
+    btn.onclick = () => startQuiz(s.slug);
+    grid.appendChild(btn);
+  });
+  quizSheet.classList.add('show');
+}
+async function startQuiz(subjectSlug) {
+  if (quizLoading || chatLoading) { showToast('Wait for the current request to finish.', 'err'); return; }
+  quizSheet.classList.remove('show');
+  const course = CODE_LANGS.find(s => s.slug === subjectSlug);
+  if (!course) return;
+  if (activeQuiz && !confirm('Leave your current quiz and start a new one?')) return;
+  activeQuiz = null;
+  const lvl = codeProgress[subjectSlug]?.level || 0;
+  const mode = computeMode(subjectSlug);
+  let numQ = 5;
+  if (mode === 'struggling') numQ = 3;
+  else if (mode === 'cruising') numQ = 6;
+  switchMode('quiz');
+  quizChat.innerHTML = '';
+  if (!TutorAI.getActiveKey() || !navigator.onLine) {
+    startPracticeQuiz(course);
+    return;
+  }
+  quizLoading = true;
+  document.getElementById('newQuiz').disabled = true;
+  const typing = document.createElement('div');
+  typing.className = 'msg bot';
+  typing.innerHTML = `<div class="avatar">AI</div><div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div>`;
+  quizChat.appendChild(typing);
+  try {
+    const key = TutorAI.getActiveKey();
+    const model = TutorAI.getActiveModel();
+    const prompt = `Generate ${numQ} multiple-choice questions for a beginner learning ${course.title}.
+
+Student mastery: ${lvl}/5.
+
+Output ONLY valid JSON:
+{ "topic": "${subjectSlug}", "title": "${course.title} Quiz", "questions": [ { "q": "Q?", "choices": ["A","B","C","D"], "answer": 0, "explain": "Under 25 words." } ] }
+
+Rules: exactly ${numQ} questions, 4 choices each, answer is 0-based index.`;
+    const res = await fetch(TutorAI.getActiveUrl(), {
+      method:'POST',
+      signal: AbortSignal.timeout(30000),
+      headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer ' + key },
+      body: JSON.stringify({
+        model,
+        messages: [
+          { role:'system', content:'You output only valid JSON.' },
+          { role:'user', content: prompt }
+        ],
+        temperature: 0.5,
+        max_tokens: 1800
+      })
+    });
+    if (!res.ok) throw new Error('Quiz service unavailable');
+    const data = await res.json();
+    typing.remove();
+    if (data?.error) throw new Error('Quiz service unavailable');
+    let raw = data?.choices?.[0]?.message?.content || '';
+    if (typeof raw !== 'string') throw new Error('Invalid quiz response. Try again.');
+    raw = raw.replace(/```json/gi, '').replace(/```/g, '').trim();
+    const s = raw.indexOf('{'), e = raw.lastIndexOf('}');
+    if (s < 0 || e < 0) throw new Error('Invalid quiz response');
+    const quiz = JSON.parse(raw.slice(s, e + 1));
+    if (!validQuiz(quiz)) throw new Error('Invalid quiz questions');
+    quiz.topic = course.slug;
+    quiz.title = course.title + ' Quiz';
+    renderQuizInPanel(quiz);
+  } catch (err) {
+    typing.remove();
+    showToast('AI quiz unavailable. Using built-in practice questions.', 'err');
+    startPracticeQuiz(course);
+  } finally {
+    quizLoading = false;
+    document.getElementById('newQuiz').disabled = false;
+  }
+}
+function renderQuizInPanel(quiz) {
+  activeQuiz = { data: quiz, answers: new Array(quiz.questions.length).fill(-1), current: 0 };
+  quizChat.innerHTML = '';
+  const wrap = document.createElement('div');
+  wrap.className = 'msg bot';
+  wrap.innerHTML = `
+    <div class="avatar">QZ</div>
+    <div class="bubble quiz-bubble">
+      <div class="quiz-header">
+        <div class="quiz-title">${escapeHtml(quiz.title || 'Quiz')}</div>
+        <div class="quiz-progress" id="quizProgress">Question 1 of ${quiz.questions.length}</div>
+      </div>
+      <div id="quizBody"></div>
+    </div>`;
+  quizChat.appendChild(wrap);
+  renderQuizQuestion();
+}
+function renderQuizQuestion() {
+  if (!activeQuiz) return;
+  const total = activeQuiz.data.questions.length;
+  const q = activeQuiz.data.questions[activeQuiz.current];
+  const body = document.getElementById('quizBody');
+  if (!body) return;
+  document.getElementById('quizProgress').textContent = `Question ${activeQuiz.current + 1} of ${total}`;
+  const chosen = activeQuiz.answers[activeQuiz.current];
+  const answered = chosen !== -1;
+  const letters = ['A','B','C','D'];
+  let choicesHtml = '';
+  q.choices.forEach((c, i) => {
+    let cls = 'quiz-choice';
+    if (answered) {
+      if (i === q.answer) cls += ' correct';
+      else if (i === chosen) cls += ' wrong';
+      cls += ' locked';
+    }
+    choicesHtml += `<button class="${cls}" data-idx="${i}">${escapeHtml(c)}</button>`;
+  });
+  body.innerHTML = `
+    <div class="quiz-question">${escapeHtml(q.q)}</div>
+    <div class="quiz-choices">${choicesHtml}</div>
+    ${answered ? `<div class="quiz-explain"><strong>${letters[q.answer]} is correct.</strong> ${escapeHtml(q.explain || '')}</div>` : ''}
+    ${answered ? `<button class="btn primary quiz-next" id="quizNext">${activeQuiz.current === total - 1 ? 'See results' : 'Next question'}</button>` : ''}`;
+  body.querySelectorAll('.quiz-choice').forEach(btn => {
+    btn.onclick = () => {
+      if (activeQuiz.answers[activeQuiz.current] !== -1) return;
+      activeQuiz.answers[activeQuiz.current] = parseInt(btn.dataset.idx, 10);
+      renderQuizQuestion();
+    };
+  });
+  const nextBtn = document.getElementById('quizNext');
+  if (nextBtn) nextBtn.onclick = () => {
+    if (activeQuiz.current === total - 1) finishQuiz();
+    else { activeQuiz.current++; renderQuizQuestion(); }
+  };
+}
+function finishQuiz() {
+  if (!activeQuiz) return;
+  const total = activeQuiz.data.questions.length;
+  let correct = 0;
+  activeQuiz.data.questions.forEach((q, i) => { if (activeQuiz.answers[i] === q.answer) correct++; });
+  const pct = Math.round((correct / total) * 100);
+  let xp = correct * 20;
+  if (correct === total) xp += 50;
+  const rankBefore = getRank(totalXp).title;
+  addXp(xp);
+  const rankAfter = getRank(totalXp).title;
+  const body = document.getElementById('quizBody');
+  const scoreColor = pct >= 80 ? 'var(--accent)' : pct >= 50 ? 'var(--gold)' : 'var(--danger)';
+  const scoreMsg = pct === 100 ? 'Perfect!' : pct >= 80 ? 'Great work!' : pct >= 50 ? 'Not bad!' : 'Keep practising!';
+  body.innerHTML = `
+    <div class="quiz-result">
+      <div class="quiz-score" style="color:${scoreColor}">${correct}/${total}</div>
+      <div class="quiz-pct">${pct}% correct</div>
+      <div class="quiz-score-msg">${scoreMsg}</div>
+      <div class="quiz-xp-award">+${xp} XP</div>
+      ${rankAfter !== rankBefore ? `<div class="rank-up">Rank up! You are now ${rankAfter}.</div>` : ''}
+    </div>`;
+  quizHistory.unshift({ topic: activeQuiz.data.topic, score: correct, total, xp, at: Date.now() });
+  if (quizHistory.length > 100) quizHistory = quizHistory.slice(0, 100);
+  localStorage.setItem('quizHistory', JSON.stringify(quizHistory));
+  const slug = activeQuiz.data.topic;
+  if (slug) {
+    const st = getSubjectAdaptive(slug);
+    st.recentQuizzes.push({ pct, at: Date.now() });
+    if (st.recentQuizzes.length > 5) st.recentQuizzes = st.recentQuizzes.slice(-5);
+    saveAdaptive();
+    const cur = codeProgress[slug]?.level || 0;
+    let newLevel = cur;
+    if (pct >= 90 && cur < 5) newLevel = cur + 1;
+    else if (pct >= 70 && cur < 4) newLevel = Math.max(cur, 2);
+    if (newLevel > cur) updateTopic(slug, newLevel, `quiz: ${pct}%`);
+  }
+  showToast('+' + xp + ' XP earned', 'gold');
+  activeQuiz = null;
+}
+
+/* ============ EVENTS ============ */
+sendBtn.onclick = () => { if (sendBtn.disabled) return; const t = input.value.trim(); if (!t) return; input.value = ''; input.style.height = '46px'; ask(t); };
+input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendBtn.click(); } });
+input.addEventListener('input', () => { input.style.height = '46px'; input.style.height = Math.min(input.scrollHeight, 140) + 'px'; });
+document.querySelectorAll('.chip[data-msg]').forEach(c => { c.onclick = () => ask(c.dataset.msg); });
+
+const btnVoice = document.getElementById('btnVoice');
+function paintVoiceBtn() { btnVoice.classList.toggle('on', voiceOn); btnVoice.textContent = voiceOn ? '🔊' : '🔇'; btnVoice.setAttribute('aria-label', voiceOn ? 'Mute spoken replies' : 'Unmute spoken replies'); btnVoice.setAttribute('aria-pressed', String(voiceOn)); }
+btnVoice.onclick = () => { voiceOn = !voiceOn; localStorage.setItem('voiceOn', voiceOn ? '1' : '0'); paintVoiceBtn(); if (!voiceOn) stopSpeaking(); };
+paintVoiceBtn();
+function openSettings() {
+  TutorAI.openSettings();
+  document.getElementById('goalMin').value = goalMin;
+  document.getElementById('focusLang').value = focusLang;
+  document.getElementById('rate').value = localStorage.getItem('rate') || '1';
+  document.getElementById('rateVal').textContent = (localStorage.getItem('rate') || '1') + 'x';
+  document.getElementById('togAuto').classList.toggle('on', autoRead);
+  document.getElementById('togBeginner').classList.toggle('on', beginnerMode);
+  loadVoices();
+  settings.classList.add('show');
+  setStatus(TutorAI.getActiveKey() ? 'Key saved' : 'No ' + TutorAI.getProviderName() + ' key', TutorAI.getActiveKey() ? 'ok' : '');
+}
+document.getElementById('btnSet').onclick = openSettings;
+settings.onclick = e => { if (e.target === settings) settings.classList.remove('show'); };
+document.getElementById('saveSet').onclick = () => {
+  TutorAI.saveSettings();
+  localStorage.setItem('rate', document.getElementById('rate').value);
+  localStorage.setItem('voiceName', document.getElementById('voice').value);
+  localStorage.setItem('autoRead', autoRead ? '1' : '0');
+  focusLang = document.getElementById('focusLang').value;
+  localStorage.setItem('code_focusLang', focusLang);
+  localStorage.setItem('code_beginnerMode', beginnerMode ? '1' : '0');
+  goalMin = Math.max(5, Math.min(240, parseInt(document.getElementById('goalMin').value || '30', 10)));
+  localStorage.setItem('goalMin', String(goalMin));
+  updateTimerBar();
+  settings.classList.remove('show');
+  addSys('Settings saved.'); setStatus(TutorAI.getActiveKey() ? 'Ready' : 'Set ' + TutorAI.getProviderName() + ' API key', TutorAI.getActiveKey() ? 'ok' : '');
+};
+TutorAI.bindSettings(setStatus);
+document.getElementById('togAuto').onclick = (e) => {
+  autoRead = !autoRead;
+  e.currentTarget.classList.toggle('on', autoRead);
+  if (autoRead) {
+    voiceOn = true;
+    localStorage.setItem('voiceOn', '1');
+    paintVoiceBtn();
+  }
+};
+document.getElementById('togBeginner').onclick = (e) => { beginnerMode = !beginnerMode; e.target.classList.toggle('on', beginnerMode); };
+document.getElementById('rate').oninput = (e) => { document.getElementById('rateVal').textContent = e.target.value + 'x'; };
+document.getElementById('testVoice').onclick = () => { speak("Hello! I am your code tutor."); };
+document.getElementById('clearChat').onclick = () => {
+  if (chatLoading || quizLoading) { showToast('Wait for the current request to finish.', 'err'); return; }
+  if (!confirm('Clear chat history? Progress is kept.')) return;
+  codeHistory = []; localStorage.removeItem('code_hist'); chat.innerHTML = '';
+  settings.classList.remove('show'); addSys('Chat cleared.');
+  setTimeout(() => ask('Hi, I am ready to start learning. Please begin.'), 300);
+};
+
+document.getElementById('toolStats').onclick = () => { settings.classList.remove('show'); renderStats(); statsPanel.classList.add('show'); };
+document.getElementById('toolProgress').onclick = () => { settings.classList.remove('show'); renderProgress(); progressPanel.classList.add('show'); };
+document.getElementById('toolLessons').onclick = () => { settings.classList.remove('show'); renderCourses(); coursesPanel.classList.add('show'); };
+document.getElementById('toolNotes').onclick = () => { settings.classList.remove('show'); notesFilter = { search:'', tag:'all' }; document.getElementById('noteSearch').value = ''; renderNotes(); notesPanel.classList.add('show'); };
+document.getElementById('toolBackup').onclick = () => { settings.classList.remove('show'); renderBackupStats(); backupPanel.classList.add('show'); };
+
+document.getElementById('closeProg').onclick = () => progressPanel.classList.remove('show');
+progressPanel.onclick = e => { if (e.target === progressPanel) progressPanel.classList.remove('show'); };
+document.getElementById('resetProg').onclick = () => {
+  if (!confirm('Delete code progress?')) return;
+  codeProgress = {}; codeAdaptive = { subjects:{} };
+  localStorage.removeItem('code_prog'); localStorage.setItem('code_adaptive', JSON.stringify(codeAdaptive));
+  renderProgress();
+};
+document.getElementById('closeStats').onclick = () => statsPanel.classList.remove('show');
+document.getElementById('resetStats').onclick = () => {
+  if (!confirm('Reset stats, streak, XP, and quiz history shared by all tutor pages? Lesson progress and notes stay unchanged.')) return;
+  streak = { current:0, best:0, days:{}, lastVisit:null };
+  stats = { totalMs:0, sessions:0 };
+  totalXp = 0;
+  quizHistory = [];
+  localStorage.setItem('stats', JSON.stringify(stats));
+  localStorage.setItem('totalXp', '0');
+  localStorage.setItem('quizHistory', '[]');
+  saveStreak();
+  updateTimerBar();
+  paintXpPill();
+  renderStats();
+};
+statsPanel.onclick = e => { if (e.target === statsPanel) statsPanel.classList.remove('show'); };
+document.getElementById('closeNotes').onclick = () => notesPanel.classList.remove('show');
+notesPanel.onclick = e => { if (e.target === notesPanel) notesPanel.classList.remove('show'); };
+document.getElementById('noteSearch').oninput = (e) => { notesFilter.search = e.target.value; renderNotes(); };
+document.getElementById('exportNotes').onclick = () => {
+  if (!notes.length) return showToast('Nothing to export','err');
+  const lines = notes.map(n => `[${n.topic || 'general'}] ${new Date(n.savedAt).toLocaleString()}\n${n.text}\n${'─'.repeat(40)}\n`);
+  const blob = new Blob([lines.join('\n')], { type:'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'notes-' + Date.now() + '.txt'; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+};
+document.getElementById('clearNotes').onclick = () => {
+  if (!notes.length || !confirm('Delete ALL notes?')) return;
+  notes = []; localStorage.removeItem('notes'); renderNotes();
+};
+document.getElementById('closeCourses').onclick = () => coursesPanel.classList.remove('show');
+coursesPanel.onclick = e => { if (e.target === coursesPanel) coursesPanel.classList.remove('show'); };
+document.getElementById('closeLessons').onclick = () => { lessonsPanel.classList.remove('show'); coursesPanel.classList.add('show'); };
+document.getElementById('chipQuiz').onclick = openQuizSheet;
+document.getElementById('newQuiz').onclick = openQuizSheet;
+document.getElementById('closeQuizSheet').onclick = () => quizSheet.classList.remove('show');
+quizSheet.onclick = e => { if (e.target === quizSheet) quizSheet.classList.remove('show'); };
+
+/* ============ BACKUP (full, shared) ============ */
+function collectBackup() {
+  const data = {};
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k === 'lastSession') continue;
+    try { data[k] = localStorage.getItem(k); } catch(e) {}
+  }
+  Object.assign(data, TutorAI.collectSettings());
+  data.apiKey = data.apiKeyGroq;
+  return { version: BACKUP_VERSION, exported: new Date().toISOString(), app: 'CodeTutor+SHSTutor+RedTeamTutor', data };
+}
+function applyBackup(backup) {
+  if (!backup || typeof backup !== 'object' || !backup.data || typeof backup.data !== 'object' || Array.isArray(backup.data)) throw new Error('Invalid backup');
+  Object.entries(backup.data).forEach(([k, v]) => { if (typeof v === 'string') localStorage.setItem(k, v); });
+  TutorAI.restoreSettings(backup.data);
+}
+function renderBackupStats() {
+  const el = document.getElementById('backupStats');
+  let done = 0, total = 0;
+  CODE_LANGS.forEach(s => { const p = getCourseProgress(s.slug); done += p.done; total += p.total; });
+  el.innerHTML = `
+    <div class="bstat"><div class="v">${done}/${total}</div><div class="k">Lessons</div></div>
+    <div class="bstat"><div class="v">${notes.length}</div><div class="k">Notes</div></div>
+    <div class="bstat"><div class="v">${totalXp}</div><div class="k">XP</div></div>
+  `;
+}
+document.getElementById('closeBackup').onclick = () => backupPanel.classList.remove('show');
+backupPanel.onclick = e => { if (e.target === backupPanel) backupPanel.classList.remove('show'); };
+document.getElementById('actExport').onclick = () => {
+  try {
+    const backup = collectBackup();
+    const json = JSON.stringify(backup, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const filename = 'backup-' + new Date().toISOString().slice(0,10) + '.json';
+    const a = document.createElement('a'); a.href = url; a.download = filename; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    showToast('Backup exported', 'ok');
+  } catch (e) { showToast('Export failed: ' + e.message, 'err'); }
+};
+document.getElementById('actShowImport').onclick = () => {
+  const a = document.getElementById('importArea');
+  a.style.display = a.style.display === 'none' ? 'block' : 'none';
+};
+document.getElementById('cancelImport').onclick = () => {
+  document.getElementById('importArea').style.display = 'none';
+  document.getElementById('importText').value = '';
+  document.getElementById('importFile').value = '';
+};
+document.getElementById('importFile').onchange = (e) => {
+  const f = e.target.files[0]; if (!f) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => { document.getElementById('importText').value = ev.target.result; showToast('Loaded. Tap Restore.', 'ok'); };
+  reader.readAsText(f);
+};
+document.getElementById('doImport').onclick = () => {
+  if (chatLoading || quizLoading) { showToast('Wait for the current request to finish.', 'err'); return; }
+  const text = document.getElementById('importText').value.trim();
+  if (!text) { showToast('Paste or pick a file first.', 'err'); return; }
+  let backup;
+  try { backup = JSON.parse(text); } catch (e) { showToast('Invalid JSON', 'err'); return; }
+  if (!confirm('This will REPLACE all current data. Continue?')) return;
+  try { applyBackup(backup); showToast('Restoring...', 'ok'); setTimeout(() => location.reload(), 600); } catch (e) { showToast('Failed: ' + e.message, 'err'); }
+};
+
+/* ============ BOOT ============ */
+loadVoices();
+saveStreak();
+paintXpPill();
+updateTimerBar();
+registerVisit();
+startSessionTimer();
+
+if (codeCurrentLesson) paintLessonBanner();
+
+if (codeHistory.length) {
+  codeHistory.forEach(m => {
+    if (m.role === 'assistant') addMsg('bot', m.content, { noSpeak:true });
+    else if (m.role === 'user') addMsg('user', m.content);
+  });
+} else {
+  ask('Hi, I am ready to start learning. Please begin.');
+}
+
+setStatus(TutorAI.getActiveKey() ? 'Ready' : 'Set ' + TutorAI.getProviderName() + ' API key', TutorAI.getActiveKey() ? 'ok' : '');
+
+window.addEventListener('beforeunload', endSession);
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) endSession();
+  else if (!sessionTimer) startSessionTimer();
+});
+</script>
+</body>
+</html>
