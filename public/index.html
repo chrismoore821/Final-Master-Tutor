@@ -36,7 +36,7 @@
   body { display:flex; flex-direction:column; height:100dvh; padding-top:env(safe-area-inset-top); padding-bottom:env(safe-area-inset-bottom); }
 
   header {
-    display:flex; align-items:center; gap:6px;
+    display:flex; flex-wrap:wrap; align-items:center; gap:6px;
     padding:10px;
     background:rgba(11,15,23,.7); backdrop-filter:blur(14px);
     border-bottom:1px solid var(--border);
@@ -51,6 +51,9 @@
   }
   header h1 { font-size:13px; margin:0; font-weight:600; letter-spacing:.2px; flex:1; min-width:0; }
   header h1 small { display:block; font-size:9.5px; color:var(--dim); font-weight:500; letter-spacing:.4px; text-transform:uppercase; margin-top:1px; }
+  .developer-credit { margin:0; font-size:12px; line-height:1.5; color:var(--fg); }
+  header .developer-credit { flex:0 0 100%; padding-top:6px; border-top:1px solid var(--border); }
+  #settings .developer-credit { margin-bottom:14px; }
   .streak-pill {
     display:flex; align-items:center; gap:3px;
     background:linear-gradient(135deg, rgba(255,123,74,.15), rgba(227,179,65,.15));
@@ -619,6 +622,7 @@
   <a class="icon-btn" title="SHS Tutor" href="shs.html" style="text-decoration:none;">📘</a>
   <a class="icon-btn" title="Code" href="code.html" style="text-decoration:none;">💻</a>
   <button class="icon-btn" id="btnSet" title="Settings">⚙️</button>
+  <p class="developer-credit">This App was developed by Christopher Akwaboah</p>
 </header>
 
 <div id="timerBar">
@@ -668,6 +672,7 @@
 <div id="settings">
   <div class="sheet">
     <h2>⚙️ Settings</h2>
+    <p class="developer-credit">This App was developed by Christopher Akwaboah</p>
     <p class="sub">Both keys are stored in this browser and shared across all three tutors.</p>
     <div class="field">
       <label for="provider">AI Provider</label>
